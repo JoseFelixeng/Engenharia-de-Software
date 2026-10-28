@@ -35,4 +35,7 @@ google-services.json
 *.hprof
 
 #Arquivos de Ambiente
-venv 
+venv
+
+#Modulos render
+node_modules
