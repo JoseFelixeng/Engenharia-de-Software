@@ -1,0 +1,5 @@
+#Build the app stage 
+FROM python:3.12.3
+
+#Create the app user 
+RUN groupadd backend && useradd -g backend bakend
