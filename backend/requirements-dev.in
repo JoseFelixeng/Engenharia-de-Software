@@ -1,0 +1,13 @@
+# dependencias de entrada
+fastapi         # modelo de api usada para criar a aplicação
+uvicorn         # servidor web para aplicação funciona em svai
+sqlmodel        # permite que para usaemos classes python para interpretar tableas sql
+typer           # permite que criemos ferramentas de linha de comandos para administrar o projeto
+dynaconf        # biblioteca para gerenciar configurações
+jinja2          # biblioteca para fazer templates
+python-jose[cryptography]  # biblioteca usada para criar tokens
+passlib[bcrypt] # serve para criar o hash do password
+python-multipart # conseguir fazer upload de imagem
+psycopg2-binary  # driver que permite se conectar ao banco de dados postgres
+alembic          # ferramenta de database migracion
+rich             # serve para criar tabelas no terminal 
