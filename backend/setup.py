@@ -16,15 +16,15 @@ def read_requirements(path):
     ]
 
 # Meta dados do projeto
-setup(S
+setup(
     name="backend",
     version="0.0.1",
     description="Backend de uma aplicação de venda de imovéis",
     long_description=read("README.md"),
     long_description_content_type="text/markdown",
     url="<https://backend.io>",
-    author="José Felix/ Grupo de Enbarcados",
-    python_requires=">=3.8",
+    author="José Felix / Grupo de Engehnaria de Software",
+    python_requires=">=3.12",
     packages=find_packages(exclude=["tests"]),
     include_package_data=True,
     install_requires=read_requirements("requirements-dev.txt"),

@@ -1,7 +1,11 @@
-# Arquivo app.py 
+from fastapi import FastAPI
 
-app = FastAPI(
-    title="backend",
-    version"0.0.1",
-    description="Backend da Plataforma de Aluguel e Venda de Imovéis"
-)
+app = FastAPI()
+
+@app.get("/")
+def home():
+    return {
+        "message": "Backend funcionando!",
+        "status": "success"
+    }
+
