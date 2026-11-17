@@ -39,3 +39,6 @@ venv
 
 #Modulos render
 node_modules
+
+AGENTS.md
+criterios.txt 
