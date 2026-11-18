@@ -1,8 +1,7 @@
-"""Segurança: hash de senha (bcusto 12) e tokens JWT."""
+"""Segurança: hash de senha (bcrypt, custo 12) e tokens JWT."""
 
 from datetime import datetime, timedelta, timezone
 
-import os
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
