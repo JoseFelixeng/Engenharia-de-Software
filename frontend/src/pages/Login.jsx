@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout.jsx";
 import Field from "../components/Field.jsx";
 import { Icon } from "../components/Icons.jsx";
+import { login } from "../services/mockApi.js";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -11,6 +12,7 @@ export default function Login() {
   const [lembrar, setLembrar] = useState(true);
   const [erros, setErros] = useState({});
   const [status, setStatus] = useState("idle"); // idle | loading | ok | fail
+  const navigate = useNavigate();
 
   const set = (k) => (e) => {
     setForm({ ...form, [k]: e.target.value });
@@ -30,11 +32,18 @@ export default function Login() {
     setErros(e);
     if (Object.keys(e).length) return;
     setStatus("loading");
-    // TODO: integrar com a API de autenticação, por exemplo:
-    // const res = await fetch("/api/auth/login", { method: "POST", headers: {"Content-Type":"application/json"},
-    //   body: JSON.stringify({ email: form.email, senha: form.senha, lembrar }) });
-    await new Promise((r) => setTimeout(r, 1200));
-    setStatus("ok");
+    try {
+      const resposta = await login(form.email, form.senha);
+      localStorage.setItem("morada_token", resposta.access_token || "");
+      localStorage.setItem("morada_usuario", JSON.stringify(resposta.usuario || {}));
+      const tipo = resposta.usuario?.tipo_usuario;
+      if (tipo === "administrador") navigate("/admin");
+      else if (tipo === "proprietario" || tipo === "corretor") navigate("/vendedor");
+      else navigate("/comprador");
+    } catch {
+      setStatus("fail");
+      setErros({ _api: "E-mail ou senha incorretos." });
+    }
   };
 
   return (

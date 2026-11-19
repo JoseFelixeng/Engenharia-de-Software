@@ -70,7 +70,7 @@ class Favorito(SQLModel, table=True):
     imovel_id: int = Field(foreign_key="imovel.id", primary_key=True)
     data: datetime | None = Field(default_factory=lambda: datetime.now(timezone.utc))
 
-    usuario: usuario = Relationship()
+    usuario: "Usuario" = Relationship()
     imovel: Imovel = Relationship()
 
 

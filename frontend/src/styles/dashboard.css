@@ -1,0 +1,60 @@
+/* ============ Dashboard ============ */
+.dashboard { min-height: calc(100vh - 70px); padding-top: 80px; }
+.dashboard-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 32px; flex-wrap: wrap; }
+.dashboard-header h1 { font-size: 1.8rem; margin-bottom: 4px; }
+.dashboard-header p { color: var(--ink-soft); }
+
+/* Busca e filtros */
+.busca-filtros { margin-bottom: 32px; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); }
+.filtros-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: end; }
+.filtros-form .field { display: flex; flex-direction: column; gap: 6px; }
+.filtros-form label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-mute); }
+.filtros-form input, .filtros-form select { padding: 10px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); font: inherit; }
+.filtros-form input:focus, .filtros-form select:focus { outline: 0; border-color: var(--brand-2); }
+
+/* Resultado */
+.resultado { margin-bottom: 24px; }
+
+/* Admin */
+.admin-filtros { display: flex; gap: 24px; margin-bottom: 24px; flex-wrap: wrap; }
+.filtros-chip { display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; }
+.filtros-chip .eyebrow { font-size: 0.75rem; margin: 0; }
+.filtros-chip button { padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); border: 0; background: transparent; cursor: pointer; }
+.filtros-chip button.on { background: var(--brand); color: #fff; }
+
+.admin-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-l); overflow: hidden; }
+.admin-table th { background: var(--bg-soft); text-align: left; padding: 12px 16px; font-size: 0.85rem; font-weight: 600; color: var(--ink-mute); border-bottom: 1px solid var(--line); }
+.admin-table td { padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.admin-table tr:last-child td { border-bottom: 0; }
+.admin-table tr:hover { background: var(--bg-soft); }
+
+.tipo-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; background: var(--brand-soft); color: var(--brand); }
+.tipo-badge.administrador { background: #fde6dc; color: var(--accent); }
+.tipo-badge.corretor { background: #dff0e8; color: var(--brand-2); }
+.tipo-badge.proprietario { background: #e9dcff; color: #6b4fa1; }
+.tipo-badge.interessado { background: #d8f0d4; color: #2f7d4f; }
+
+.sit-badge { display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
+.sit-badge.ativa { background: var(--brand-soft); color: var(--brand); }
+.sit-badge.inativa { background: #fde6dc; color: var(--danger); }
+
+.btn-sm { padding: 6px 14px; font-size: 0.85rem; }
+
+/* Modal */
+.modal-overlay { position: fixed; inset: 0; z-index: 100; background: rgba(20, 35, 31, 0.45); backdrop-filter: blur(4px); display: grid; place-items: center; padding: 24px; }
+.modal { background: var(--surface); border-radius: var(--radius-l); padding: 28px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: var(--shadow-l); }
+.modal-close { position: absolute; top: 12px; right: 16px; font-size: 1.5rem; line-height: 1; cursor: pointer; color: var(--ink-mute); }
+.modal h2 { margin-bottom: 20px; font-size: 1.4rem; }
+
+.modal .field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
+.modal label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); }
+.modal input, modal select, modal textarea { padding: 10px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); font: inherit; width: 100%; }
+.modal textarea { resize: vertical; min-height: 80px; }
+.modal .err { color: var(--danger); font-size: 0.8rem; margin-top: 4px; }
+.modal .two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 64px 20px; border: 2px dashed var(--line); border-radius: var(--radius-l); color: var(--ink-soft); }
+
+/* Ícone Plus */
+.Icon { display: inline-block; }

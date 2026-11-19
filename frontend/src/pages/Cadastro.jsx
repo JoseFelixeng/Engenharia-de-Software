@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout.jsx";
 import Field from "../components/Field.jsx";
 import { Icon } from "../components/Icons.jsx";
+import { cadastro } from "../services/mockApi.js";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -37,6 +38,7 @@ export default function Cadastro() {
   const [erros, setErros] = useState({});
   const [status, setStatus] = useState("idle");
   const nivel = useMemo(() => forca(form.senha), [form.senha]);
+  const navigate = useNavigate();
 
   const set = (k, fn = (v) => v) => (e) => {
     setForm({ ...form, [k]: fn(e.target.value) });
@@ -59,10 +61,23 @@ export default function Cadastro() {
     setErros(e);
     if (Object.keys(e).length) return;
     setStatus("loading");
-    // TODO: integrar com a API. Campos alinhados à tabela USUARIO do modelo ER:
-    // { nome, email, telefone, tipo_usuario: tipo, senha } — o backend gera Senha_hash, Data_cadastro e Situacao.
-    await new Promise((r) => setTimeout(r, 1400));
-    setStatus("ok");
+    try {
+      const tipoApi = tipo === "anunciante" ? "proprietario" : tipo;
+      const resposta = await cadastro({
+        nome: form.nome,
+        email: form.email,
+        telefone: form.telefone,
+        tipo_usuario: tipoApi,
+        senha: form.senha,
+      });
+      localStorage.setItem("morada_token", resposta.access_token || "");
+      localStorage.setItem("morada_usuario", JSON.stringify(resposta.usuario || resposta));
+      const destino = tipo === "anunciante" ? "/vendedor" : "/comprador";
+      navigate(destino);
+    } catch {
+      setStatus("fail");
+      setErros({ _api: "Erro ao criar conta. Tente novamente." });
+    }
   };
 
   return (
