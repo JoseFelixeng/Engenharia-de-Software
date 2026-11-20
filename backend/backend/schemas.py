@@ -67,6 +67,10 @@ class LoginRequest(BaseModel):
         return _validar_email(v)
 
 
+class GoogleLoginRequest(BaseModel):
+    credential: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
@@ -87,6 +91,18 @@ class HistoricoPrecoRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     preco: float
+    data: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ContatoRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    imovel_id: int
+    interessado_id: int
+    interessado_nome: str | None = None
+    interessado_email: str | None = None
+    mensagem: str | None = None
     data: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 

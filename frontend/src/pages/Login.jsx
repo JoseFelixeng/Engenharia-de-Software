@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout.jsx";
 import Field from "../components/Field.jsx";
 import { Icon } from "../components/Icons.jsx";
-import { login } from "../services/mockApi.js";
+import { login, loginGoogle } from "../services/mockApi.js";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -46,6 +46,29 @@ export default function Login() {
     }
   };
 
+  const entrarComGoogle = async () => {
+    setStatus("loading");
+    try {
+      // Em produção, use a biblioteca oficial do Google para obter o credential.
+      // Aqui simulamos o fluxo: o frontend envia o credential para /auth/google.
+      const credential = prompt("Cole o ID token do Google (credential):");
+      if (!credential) {
+        setStatus("idle");
+        return;
+      }
+      const resposta = await loginGoogle(credential);
+      localStorage.setItem("morada_token", resposta.access_token || "");
+      localStorage.setItem("morada_usuario", JSON.stringify(resposta.usuario || {}));
+      const tipo = resposta.usuario?.tipo_usuario;
+      if (tipo === "administrador") navigate("/admin");
+      else if (tipo === "proprietario" || tipo === "corretor") navigate("/vendedor");
+      else navigate("/comprador");
+    } catch {
+      setStatus("fail");
+      setErros({ _api: "Erro ao entrar com o Google. Tente novamente." });
+    }
+  };
+
   return (
     <AuthLayout
       titulo="Bem-vindo de volta à sua"
@@ -68,7 +91,7 @@ export default function Login() {
             <p>Novo por aqui? <Link to="/cadastro">Crie uma conta grátis</Link></p>
           </header>
 
-          <button type="button" className="btn-social"><Icon.Google /> Continuar com Google</button>
+          <button type="button" className="btn-social" onClick={entrarComGoogle}><Icon.Google /> Continuar com Google</button>
           <div className="divider"><span>ou entre com e-mail</span></div>
 
           <Field id="email" label="E-mail" icon={Icon.Mail} type="email" autoComplete="email" value={form.email} onChange={set("email")} error={erros.email} />

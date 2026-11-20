@@ -47,3 +47,15 @@ export async function listarImoveis(filtros = {}) {
 export async function criarImovel(dados, token) {
   return _request("POST", "/imoveis", dados, token);
 }
+
+export async function atualizarImovel(imovelId, dados, token) {
+  return _request("PATCH", `/imoveis/${imovelId}`, dados, token);
+}
+
+export async function listarContatos(token) {
+  return _request("GET", "/imoveis/contatos", null, token);
+}
+
+export async function loginGoogle(credential) {
+  return _request("POST", "/auth/google", { credential });
+}
