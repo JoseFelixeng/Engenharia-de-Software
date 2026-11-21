@@ -68,6 +68,12 @@ export async function listarTodosUsuario(token) {
 export async function resetarSenhaUsuario(userId, token) {
   return _request("PATCH", `/usuario/${userId}/reset-senha`, null, token);
 }
-export function alternarSituacaoUsuario(id) {
-  return Promise.resolve({ id, atualizado: true });
+
+export async function alternarSituacaoUsuario(userId, situacao, token) {
+  return _request(
+    "PATCH",
+    `/usuario/${userId}/situacao`,
+    { situacao },
+    token
+  );
 }

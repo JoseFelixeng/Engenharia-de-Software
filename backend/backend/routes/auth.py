@@ -1,8 +1,9 @@
 """Rotas de cadastro e autenticação."""
 
+import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-
+from backend.security import criar_token_acesso, hash_senha, verificar_senha
 from backend.db import get_db
 from backend.models.user import Usuario
 from backend.schemas import (
@@ -12,10 +13,8 @@ from backend.schemas import (
     UsuarioRead,
     GoogleLoginRequest,
 )
-from backend.security import criar_token_acesso, hash_senha, verificar_senha
 
 router = APIRouter(prefix="/auth", tags=["autenticação"])
-
 
 @router.post("/cadastro", response_model=UsuarioRead, status_code=status.HTTP_201_CREATED)
 def cadastrar(dados: UsuarioCreate, db: Session = Depends(get_db)):
@@ -24,17 +23,12 @@ def cadastrar(dados: UsuarioCreate, db: Session = Depends(get_db)):
             status_code=status.HTTP_409_CONFLICT,
             detail="Já existe uma conta com este e-mail.",
         )
-    usuario = Usuario(
-        nome=dados.nome,
-        email=dados.email,
-        telefone=dados.telefone,
-        senha_hash=hash_senha(dados.senha),
-        tipo_usuario=dados.tipo_usuario,
-        situacao="ativa",
-    )
+    usuario = Usuario( nome=dados.nome, email=dados.email, telefone=dados.telefone, senha_hash=hash_senha(dados.senha), tipo_usuario=dados.tipo_usuario, situacao="ativa",)
+    
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
+
     return usuario
 
 
@@ -64,7 +58,7 @@ def login_google(dados: GoogleLoginRequest, db: Session = Depends(get_db)):
     perfil e cria a conta (se ainda não existir) ou faz login. O usuário é
     criado como `interessado` por padrão.
     """
-    import json
+   
 
     # Decodifica o payload do ID token do Google (sem verificação de assinatura
     # em desenvolvimento; em produção use a biblioteca google-auth para validar).

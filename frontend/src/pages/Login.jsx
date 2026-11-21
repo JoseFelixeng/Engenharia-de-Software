@@ -51,7 +51,7 @@ export default function Login() {
     try {
       // Em produção, use a biblioteca oficial do Google para obter o credential.
       // Aqui simulamos o fluxo: o frontend envia o credential para /auth/google.
-      const credential = prompt("Cole o ID token do Google (credential):");
+      const credential = prompt("Não Implementando ainda!");
       if (!credential) {
         setStatus("idle");
         return;
@@ -81,6 +81,7 @@ export default function Login() {
           <div className="success-ico"><Icon.Check width={34} height={34} strokeWidth={2.6} /></div>
           <h1>Login realizado!</h1>
           <p>Redirecionando para os seus imóveis…</p>
+          
           <Link to="/" className="btn btn-primary">Ir para o início</Link>
         </div>
       ) : (

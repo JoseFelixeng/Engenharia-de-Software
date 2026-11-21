@@ -7,8 +7,9 @@ from backend.auth import exigir_tipo, obter_usuario_atual
 from backend.db import get_db
 from backend.models.user import Usuario
 from backend.security import hash_senha
+from backend.schemas import UsuarioRead 
 
-...
+router = APIRouter(prefix="/usuario", tags=["usuário"])
 
 @router.patch("/{usuario_id}/reset-senha", response_model=UsuarioRead)
 def resetar_senha(
@@ -24,7 +25,7 @@ def resetar_senha(
     db.refresh(alvo)
     return alvo
 
-router = APIRouter(prefix="/usuario", tags=["usuário"])
+
 
 
 @router.get("/me", response_model=UsuarioRead)

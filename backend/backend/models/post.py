@@ -1,7 +1,6 @@
 """Modelos de imóvel e tabelas relacionadas — segue morada_postgres.sql."""
 
 from datetime import datetime, timezone
-
 from sqlalchemy import CheckConstraint, ForeignKey, String
 from sqlmodel import Field, Relationship, SQLModel
 
