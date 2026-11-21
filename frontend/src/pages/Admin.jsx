@@ -2,14 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
+import { listarTodosUsuario, alternarSituacaoUsuario } from "../services/mockApi.js";
 import "../styles/components.css";
 import "../styles/dashboard.css";
-
-const USUARIOS_MOCK = [
-  { id: 1, nome: "Maria Souza", email: "maria@example.com", tipo_usuario: "interessado", situacao: "ativa" },
-  { id: 2, nome: "Carlos Silva", email: "carlos@example.com", tipo_usuario: "corretor", situacao: "ativa" },
-  { id: 3, nome: "Ana Pereira", email: "ana@example.com", tipo_usuario: "proprietario", situacao: "inativa" },
-];
 
 export default function Admin() {
   const [usuarios, setUsuarios] = useState([]);
@@ -17,8 +12,9 @@ export default function Admin() {
   const [filtroSituacao, setFiltroSituacao] = useState("todos");
 
   async function carregar() {
-    await new Promise((r) => setTimeout(r, 500));
-    setUsuarios(USUARIOS_MOCK);
+    const token = localStorage.getItem("morada_token");
+    const data = await listarTodosUsuario(token);
+    setUsuarios(data);
   }
 
   useEffect(() => {
@@ -30,10 +26,10 @@ export default function Admin() {
     (filtroSituacao === "todos" || u.situacao === filtroSituacao)
   );
 
-  const alternarSituacao = (id) => {
-    setUsuarios((prev) => prev.map((u) =>
-      u.id === id ? { ...u, situacao: u.situacao === "ativa" ? "inativa" : "ativa" } : u
-    ));
+  const alternarSituacao = async (id) => {
+    const token = localStorage.getItem("morada_token");
+    const atualizado = await alternarSituacaoUsuario(id, token);
+    setUsuarios((prev) => prev.map((u) => (u.id === id ? atualizado : u)));
   };
 
   return (

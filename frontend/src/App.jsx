@@ -7,6 +7,7 @@ import Cadastro from "./pages/Cadastro.jsx";
 import DashboardVendedor from "./pages/DashboardVendedor.jsx";
 import BuscaComprador from "./pages/BuscaComprador.jsx";
 import Admin from "./pages/Admin.jsx";
+import Perfil from "./pages/Perfil.jsx";
 
 function ScrollTop() {
   const { pathname } = useLocation();
@@ -40,7 +41,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!carregando && !ehAutenticado && (pathname === "/comprador" || pathname === "/vendedor" || pathname === "/admin")) {
+    if (!carregando && !ehAutenticado && (pathname === "/comprador" || pathname === "/vendedor" || pathname === "/admin" || pathname === "/perfil")) {
       navigate("/login");
     }
   }, [carregando, ehAutenticado, pathname, navigate]);
@@ -57,6 +58,7 @@ export default function App() {
         <Route path="/comprador" element={ehAutenticado ? <BuscaComprador /> : null} />
         <Route path="/vendedor" element={ehAnunciante ? <DashboardVendedor /> : null} />
         <Route path="/admin" element={ehAdmin ? <Admin /> : null} />
+        <Route path="/perfil" element={ehAutenticado ? <Perfil /> : null} />
         <Route path="*" element={<Home />} />
       </Routes>
     </>

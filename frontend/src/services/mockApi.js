@@ -59,3 +59,12 @@ export async function listarContatos(token) {
 export async function loginGoogle(credential) {
   return _request("POST", "/auth/google", { credential });
 }
+
+// ---------------- Usuários (Admin) ----------------
+export async function listarTodosUsuario(token) {
+  return _request("GET", "/usuario", null, token);
+}
+
+export async function alternarSituacaoUsuario(userId, token) {
+  return _request("PATCH", `/usuario/${userId}/situacao`, null, token);
+}

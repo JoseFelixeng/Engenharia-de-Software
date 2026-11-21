@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
-import { criarImovel, atualizarImovel, listarContatos } from "../services/mockApi.js";
+import { criarImovel, atualizarImovel, listarContatos, listarImoveis } from "../services/mockApi.js";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
@@ -23,21 +23,9 @@ export default function DashboardVendedor() {
   const [editando, setEditando] = useState(null); // { imovel, modo: 'editar' }
 
   async function carregarMeusImoveis() {
-    try {
-      const token = localStorage.getItem("morada_token");
-      const resp = await fetch(`${import.meta.env.VITE_API_BASE || "http://localhost:8000"}/imoveis`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (resp.ok) {
-        const dados = await resp.json();
-        setImoveis(dados.filter((i) => i.situacao !== "inativo"));
-      } else {
-        throw new Error("sem backend");
-      }
-    } catch {
-      const { imoveis } = await import("../data/imoveis.js");
-      setImoveis(imoveis.filter((i) => i.finalidade === "venda" || i.finalidade === "aluguel"));
-    }
+    const usuario = JSON.parse(localStorage.getItem("morada_usuario") || "{}");
+    const dados = await listarImoveis({ anunciante_id: usuario.id });
+    setImoveis(dados.filter((i) => i.situacao !== "inativo"));
   }
 
   async function carregarContatos() {
