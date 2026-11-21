@@ -3,11 +3,11 @@
 A validação de toda entrada do usuário acontece aqui, no servidor,
 mesmo que o frontend já valide (AGENTS.md).
 """
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from datetime import datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 TipoUsuario = Literal["administrador", "proprietario", "corretor", "interessado"]
 TipoUsuarioCadastro = Literal["proprietario", "corretor", "interessado"]

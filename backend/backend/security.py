@@ -1,11 +1,7 @@
 """Segurança: hash de senha (bcrypt, custo 12) e tokens JWT."""
-
 import bcrypt
-
 from datetime import datetime, timedelta, timezone
-
 from jose import JWTError, jwt
-
 from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
 
