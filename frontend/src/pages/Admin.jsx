@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
-import { listarTodosUsuario, alternarSituacaoUsuario } from "../services/mockApi.js";
+import { listarTodosUsuario, alternarSituacaoUsuario, resetarSenhaUsuario } from "../services/mockApi.js";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
@@ -26,10 +26,10 @@ export default function Admin() {
     (filtroSituacao === "todos" || u.situacao === filtroSituacao)
   );
 
-  const alternarSituacao = async (id) => {
+  const resetarSenha = async (id) => {
     const token = localStorage.getItem("morada_token");
-    const atualizado = await alternarSituacaoUsuario(id, token);
-    setUsuarios((prev) => prev.map((u) => (u.id === id ? atualizado : u)));
+    await resetarSenhaUsuario(id, token);
+    alert("Senha resetada para 00000000");
   };
 
   return (
@@ -79,11 +79,14 @@ export default function Admin() {
                   <td>
                     <span className={`sit-badge ${u.situacao}`}>{u.situacao === "ativa" ? "Ativa" : "Inativa"}</span>
                   </td>
-                  <td>
-                    <button className="btn btn-ghost btn-sm" onClick={() => alternarSituacao(u.id)}>
-                      {u.situacao === "ativa" ? "Desativar" : "Ativar"}
-                    </button>
-                  </td>
+                   <td>
+                     <button className="btn btn-ghost btn-sm" onClick={() => alternarSituacao(u.id)}>
+                       {u.situacao === "ativa" ? "Desativar" : "Ativar"}
+                     </button>
+                     <button className="btn btn-ghost btn-sm" onClick={() => resetarSenha(u.id)}>
+                       Resetar senha
+                     </button>
+                   </td>
                 </tr>
               ))}
             </tbody>

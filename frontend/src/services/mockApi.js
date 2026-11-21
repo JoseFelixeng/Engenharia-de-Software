@@ -65,6 +65,6 @@ export async function listarTodosUsuario(token) {
   return _request("GET", "/usuario", null, token);
 }
 
-export async function alternarSituacaoUsuario(userId, token) {
-  return _request("PATCH", `/usuario/${userId}/situacao`, null, token);
+export async function resetarSenhaUsuario(userId, token) {
+  return _request("PATCH", `/usuario/${userId}/reset-senha`, null, token);
 }

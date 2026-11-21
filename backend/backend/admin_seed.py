@@ -14,6 +14,8 @@ def garantir_admin() -> None:
     try:
         existente = db.query(Usuario).filter(Usuario.email == ADMIN_EMAIL).first()
         if existente is not None:
+            existente.situacao = "ativa"
+            db.commit()
             return
         admin = Usuario(
             nome="Administrador",
@@ -26,4 +28,3 @@ def garantir_admin() -> None:
         db.commit()
     finally:
         db.close()
-"""

@@ -1,22 +1,20 @@
 """Segurança: hash de senha (bcrypt, custo 12) e tokens JWT."""
 
+import bcrypt
+
 from datetime import datetime, timedelta, timezone
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 from backend.config import SECRET_KEY, ALGORITHM, ACCESS_TOKEN_EXPIRE_MINUTES
 
-# bcrypt com custo 12 (conforme AGENTS.md: "Senhas: só hash (bcrypt, custo 12)")
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 def hash_senha(senha: str) -> str:
-    return pwd_context.hash(senha)
+    return bcrypt.hashpw(senha.encode(), bcrypt.gensalt(rounds=12)).decode()
 
 
 def verificar_senha(senha_plana: str, senha_hash: str) -> bool:
-    return pwd_context.verify(senha_plana, senha_hash)
+    return bcrypt.checkpw(senha_plana.encode(), senha_hash.encode())
 
 
 def criar_token_acesso(dados: dict) -> str:
