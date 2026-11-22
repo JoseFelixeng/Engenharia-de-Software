@@ -5,14 +5,12 @@ import PropertyCard from "../components/PropertyCard.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
 import { demonstrarInteresse, listarImoveis } from "../services/mockApi.js";
-import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
 const FILTROS_INICIAIS = { finalidade: "todos", cidade: "", tipo: "", quartos: "", preco_max: "" };
 
 export default function BuscaComprador() {
-  const { usuario } = useAuth();
   const [imoveis, setImoveis] = useState([]);
   const [carga, setCarga] = useState("idle"); // idle | loading | ok | fail
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
