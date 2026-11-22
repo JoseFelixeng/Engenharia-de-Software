@@ -1,5 +1,7 @@
 """Testes da API Morada: autenticação e imóveis."""
 
+import base64
+
 import pytest
 
 
@@ -7,6 +9,19 @@ def test_home(client):
     res = client.get("/")
     assert res.status_code == 200
     assert res.json() == {"message": "Backend funcionando!", "status": "success"}
+
+
+class TestDocumentacao:
+    def test_docs_exige_basic_auth(self, client):
+        assert client.get("/docs").status_code == 401
+
+    def test_docs_com_credenciais(self, client):
+        cred = base64.b64encode(b"admin:admin").decode()
+        res = client.get("/docs", headers={"Authorization": f"Basic {cred}"})
+        assert res.status_code == 200
+
+    def test_openapi_exige_basic_auth(self, client):
+        assert client.get("/openapi.json").status_code == 401
 
 
 class TestAuth:
@@ -19,9 +34,10 @@ class TestAuth:
         })
         assert res.status_code == 201
         body = res.json()
-        assert body["email"] == "maria@example.com"
-        assert body["tipo_usuario"] == "interessado"
-        assert "senha_hash" not in body
+        assert body["usuario"]["email"] == "maria@example.com"
+        assert body["access_token"]
+        assert body["usuario"]["tipo_usuario"] == "interessado"
+        assert "senha_hash" not in body["usuario"]
 
     def test_cadastro_email_duplicado(self, client, usuario):
         res = client.post("/auth/cadastro", json={
@@ -81,8 +97,11 @@ class TestUsuario:
 
 
 class TestImoveis:
-    def test_listar_vazio(self, client):
-        res = client.get("/imoveis")
+    def test_listar_exige_login(self, client):
+        assert client.get("/imoveis").status_code == 401
+
+    def test_listar_vazio(self, client, auth_headers):
+        res = client.get("/imoveis", headers=auth_headers)
         assert res.status_code == 200
         assert res.json() == []
 
@@ -121,7 +140,7 @@ class TestImoveis:
             "senha": "Corretor 123456",
         })
         assert res.status_code == 201
-        return res.json()
+        return res.json()["usuario"]
 
     @pytest.fixture()
     def anunciante_headers(self, client, anunciante):
@@ -160,23 +179,23 @@ class TestImoveis:
         assert len(imovel["fotos"]) == 1
 
     def test_listar_e_filtrar(self, client, anunciante_headers, imovel):
-        res = client.get("/imoveis", params={"finalidade": "venda", "cidade": "Natal"})
+        res = client.get("/imoveis", headers=anunciante_headers, params={"finalidade": "venda", "cidade": "Natal"})
         assert res.status_code == 200
         assert len(res.json()) == 1
 
-        res = client.get("/imoveis", params={"finalidade": "aluguel"})
+        res = client.get("/imoveis", headers=anunciante_headers, params={"finalidade": "aluguel"})
         assert res.json() == []
 
-        res = client.get("/imoveis", params={"quartos_min": 5})
+        res = client.get("/imoveis", headers=anunciante_headers, params={"quartos_min": 5})
         assert res.json() == []
 
-    def test_detalhe(self, client, imovel):
-        res = client.get(f"/imoveis/{imovel['id']}")
+    def test_detalhe(self, client, auth_headers, imovel):
+        res = client.get(f"/imoveis/{imovel['id']}", headers=auth_headers)
         assert res.status_code == 200
         assert res.json()["id"] == imovel["id"]
 
-    def test_detalhe_inexistente(self, client):
-        assert client.get("/imoveis/9999").status_code == 404
+    def test_detalhe_inexistente(self, client, auth_headers):
+        assert client.get("/imoveis/9999", headers=auth_headers).status_code == 404
 
     def test_atualizar_preco_gera_historico(self, client, anunciante_headers, imovel):
         res = client.patch(f"/imoveis/{imovel['id']}", headers=anunciante_headers, json={
@@ -197,5 +216,5 @@ class TestImoveis:
     def test_remover_inativa(self, client, anunciante_headers, imovel):
         res = client.delete(f"/imoveis/{imovel['id']}", headers=anunciante_headers)
         assert res.status_code == 204
-        res = client.get("/imoveis")
+        res = client.get("/imoveis", headers=anunciante_headers)
         assert res.json() == []  # inativos não aparecem na listagem

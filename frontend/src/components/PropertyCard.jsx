@@ -3,7 +3,7 @@ import { Icon } from "./Icons.jsx";
 import PropertyArt from "./PropertyArt.jsx";
 import { brl } from "../data/imoveis.js";
 
-export default function PropertyCard({ imovel, comparando, onToggleCompare, delay = 0 }) {
+export default function PropertyCard({ imovel, comparando = false, onToggleCompare, delay = 0, mostrarComparar = true }) {
   const [fav, setFav] = useState(false);
   const [pop, setPop] = useState(false);
   const caiu = imovel.preco_anterior && imovel.preco < imovel.preco_anterior;
@@ -13,6 +13,10 @@ export default function PropertyCard({ imovel, comparando, onToggleCompare, dela
     setFav((f) => !f);
     setPop(true);
     setTimeout(() => setPop(false), 400);
+  };
+
+  const toggleCompare = () => {
+    if (onToggleCompare) onToggleCompare(imovel.id);
   };
 
   return (
@@ -41,7 +45,7 @@ export default function PropertyCard({ imovel, comparando, onToggleCompare, dela
       </div>
 
       <div className="pcard-body">
-        <p className="pcard-loc"><Icon.Pin width={15} height={15} /> {imovel.bairro}, {imovel.cidade} - {imovel.estado}</p>
+        <p className="pcard-loc"><Icon.Pin width={20} height={20} /> {imovel.bairro}, {imovel.cidade} - {imovel.estado}</p>
         <h3>{imovel.titulo}</h3>
         <ul className="pcard-specs">
           <li title="Quartos"><Icon.Bed width={17} height={17} />{imovel.quartos}</li>
@@ -50,11 +54,13 @@ export default function PropertyCard({ imovel, comparando, onToggleCompare, dela
           <li title="Área"><Icon.Area width={17} height={17} />{imovel.area_m2} m²</li>
         </ul>
         <div className="pcard-foot">
-          <label className={`compare ${comparando ? "on" : ""}`}>
-            <input type="checkbox" checked={comparando} onChange={() => onToggleCompare(imovel.id)} />
-            <span className="compare-box"><Icon.Check width={13} height={13} strokeWidth={3} /></span>
-            Comparar
-          </label>
+          {mostrarComparar && (
+            <label className={`compare ${comparando ? "on" : ""}`}>
+              <input type="checkbox" checked={comparando} onChange={toggleCompare} />
+              <span className="compare-box"><Icon.Check width={13} height={13} strokeWidth={3} /></span>
+              Comparar
+            </label>
+          )}
           <a href="#detalhes" className="pcard-link">Ver detalhes <Icon.Arrow width={16} height={16} /></a>
         </div>
       </div>

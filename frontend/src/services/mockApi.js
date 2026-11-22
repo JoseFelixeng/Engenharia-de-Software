@@ -5,6 +5,10 @@
 
 const BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
+function tokenAtual() {
+  return localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || "";
+}
+
 async function _request(method, path, body, token) {
   const headers = { "Content-Type": "application/json" };
   if (token) headers.Authorization = `Bearer ${token}`;
@@ -37,11 +41,13 @@ export async function listarImoveis(filtros = {}) {
   const params = new URLSearchParams();
   if (filtros.finalidade && filtros.finalidade !== "todos") params.set("finalidade", filtros.finalidade);
   if (filtros.cidade) params.set("cidade", filtros.cidade);
+  if (filtros.bairro) params.set("bairro", filtros.bairro);
   if (filtros.tipo) params.set("tipo", filtros.tipo);
   if (filtros.quartos) params.set("quartos_min", filtros.quartos);
   if (filtros.preco_max) params.set("preco_max", filtros.preco_max);
+  if (filtros.anunciante_id) params.set("anunciante_id", filtros.anunciante_id);
   const qs = params.toString() ? `?${params.toString()}` : "";
-  return _request("GET", `/imoveis${qs}`);
+  return _request("GET", `/imoveis${qs}`, null, tokenAtual());
 }
 
 export async function criarImovel(dados, token) {

@@ -3,18 +3,31 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { listarTodosUsuario, alternarSituacaoUsuario, resetarSenhaUsuario } from "../services/mockApi.js";
-import "../styles/components.css";
-import "../styles/dashboard.css";
+
+const TIPOS = ["todos", "administrador", "proprietario", "corretor", "interessado"];
+const SITUACOES = ["todos", "ativa", "inativa"];
 
 export default function Admin() {
   const [usuarios, setUsuarios] = useState([]);
   const [filtroTipo, setFiltroTipo] = useState("todos");
   const [filtroSituacao, setFiltroSituacao] = useState("todos");
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState("");
+  const [acaoId, setAcaoId] = useState(null);
+
+  const token = () => localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token");
 
   async function carregar() {
-    const token = localStorage.getItem("morada_token");
-    const data = await listarTodosUsuario(token);
-    setUsuarios(data);
+    setCarregando(true);
+    setErro("");
+    try {
+      const data = await listarTodosUsuario(token());
+      setUsuarios(data || []);
+    } catch (err) {
+      setErro(err?.detail || "Não foi possível carregar os usuários.");
+    } finally {
+      setCarregando(false);
+    }
   }
 
   useEffect(() => {
@@ -27,9 +40,28 @@ export default function Admin() {
   );
 
   const resetarSenha = async (id) => {
-    const token = localStorage.getItem("morada_token");
-    await resetarSenhaUsuario(id, token);
-    alert("Senha resetada para 00000000");
+    setAcaoId(id);
+    try {
+      await resetarSenhaUsuario(id, token());
+      alert("Senha resetada para 00000000");
+    } catch (err) {
+      alert(err?.detail || "Erro ao resetar a senha.");
+    } finally {
+      setAcaoId(null);
+    }
+  };
+
+  const alternarSituacao = async (u) => {
+    setAcaoId(u.id);
+    const nova = u.situacao === "ativa" ? "inativa" : "ativa";
+    try {
+      const atualizado = await alternarSituacaoUsuario(u.id, nova, token());
+      setUsuarios((prev) => prev.map((item) => (item.id === atualizado.id ? atualizado : item)));
+    } catch (err) {
+      alert(err?.detail || "Erro ao alterar a situação.");
+    } finally {
+      setAcaoId(null);
+    }
   };
 
   return (
@@ -47,7 +79,7 @@ export default function Admin() {
         <div className="container admin-filtros">
           <div className="filtros-chip">
             <span className="eyebrow">Filtrar por tipo</span>
-            {["todos", "administrador", "proprietario", "corretor", "interessado"].map((t) => (
+            {TIPOS.map((t) => (
               <button key={t} className={filtroTipo === t ? "on" : ""} onClick={() => setFiltroTipo(t)}>
                 {t === "todos" ? "Todos" : t}
               </button>
@@ -55,7 +87,7 @@ export default function Admin() {
           </div>
           <div className="filtros-chip">
             <span className="eyebrow">Situação</span>
-            {["todos", "ativa", "inativa"].map((s) => (
+            {SITUACOES.map((s) => (
               <button key={s} className={filtroSituacao === s ? "on" : ""} onClick={() => setFiltroSituacao(s)}>
                 {s === "todos" ? "Todos" : s.charAt(0).toUpperCase() + s.slice(1)}
               </button>
@@ -64,34 +96,54 @@ export default function Admin() {
         </div>
 
         <div className="container admin-lista">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Usuário</th><th>E-mail</th><th>Tipo</th><th>Situação</th><th>Ação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lista.map((u) => (
-                <tr key={u.id}>
-                  <td>{u.nome}</td>
-                  <td>{u.email}</td>
-                  <td><span className={`tipo-badge ${u.tipo_usuario}`}>{u.tipo_usuario}</span></td>
-                  <td>
-                    <span className={`sit-badge ${u.situacao}`}>{u.situacao === "ativa" ? "Ativa" : "Inativa"}</span>
-                  </td>
-                   <td>
-                     <button className="btn btn-ghost btn-sm" onClick={() => alternarSituacao(u.id)}>
-                       {u.situacao === "ativa" ? "Desativar" : "Ativar"}
-                     </button>
-                     <button className="btn btn-ghost btn-sm" onClick={() => resetarSenha(u.id)}>
-                       Resetar senha
-                     </button>
-                   </td>
+          {carregando && <div className="empty"><p>Carregando usuários…</p></div>}
+
+          {!carregando && erro && (
+            <div className="empty">
+              <p>{erro}</p>
+              <button className="btn btn-ghost" onClick={carregar}>Tentar novamente</button>
+            </div>
+          )}
+
+          {!carregando && !erro && (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Usuário</th><th>E-mail</th><th>Tipo</th><th>Situação</th><th>Ação</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {lista.length === 0 && (
+              </thead>
+              <tbody>
+                {lista.map((u) => (
+                  <tr key={u.id}>
+                    <td>{u.nome}</td>
+                    <td>{u.email}</td>
+                    <td><span className={`tipo-badge ${u.tipo_usuario}`}>{u.tipo_usuario}</span></td>
+                    <td>
+                      <span className={`sit-badge ${u.situacao}`}>{u.situacao === "ativa" ? "Ativa" : "Inativa"}</span>
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={acaoId === u.id}
+                        onClick={() => alternarSituacao(u)}
+                      >
+                        {u.situacao === "ativa" ? "Desativar" : "Ativar"}
+                      </button>
+                      <button
+                        className="btn btn-ghost btn-sm"
+                        disabled={acaoId === u.id}
+                        onClick={() => resetarSenha(u.id)}
+                      >
+                        Resetar senha
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {!carregando && !erro && lista.length === 0 && (
             <div className="empty">
               <p>Nenhum usuário encontrado com esses filtros.</p>
             </div>

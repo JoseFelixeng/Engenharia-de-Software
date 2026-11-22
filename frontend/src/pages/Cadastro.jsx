@@ -4,6 +4,7 @@ import AuthLayout from "../components/AuthLayout.jsx";
 import Field from "../components/Field.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { cadastro } from "../services/mockApi.js";
+import { gravarToken, useAuth } from "../services/auth.jsx";
 
 const emailOk = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 
@@ -39,6 +40,7 @@ export default function Cadastro() {
   const [status, setStatus] = useState("idle");
   const nivel = useMemo(() => forca(form.senha), [form.senha]);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const set = (k, fn = (v) => v) => (e) => {
     setForm({ ...form, [k]: fn(e.target.value) });
@@ -70,13 +72,14 @@ export default function Cadastro() {
         tipo_usuario: tipoApi,
         senha: form.senha,
       });
-      localStorage.setItem("morada_token", resposta.access_token || "");
-      localStorage.setItem("morada_usuario", JSON.stringify(resposta.usuario || resposta));
-      const destino = tipo === "anunciante" ? "/vendedor" : "/comprador";
-      navigate(destino);
-    } catch {
-      setStatus("fail");
-      setErros({ _api: "Erro ao criar conta. Tente novamente." });
+      const usuario = resposta.usuario || resposta;
+      gravarToken(resposta.access_token, true);
+      setUser(usuario);
+      navigate(tipo === "anunciante" ? "/vendedor" : "/comprador");
+    } catch (err) {
+      setStatus("idle");
+      const detalhe = err?.detail || err?.message;
+      setErros({ _api: detalhe || "Erro ao criar conta. Tente novamente." });
     }
   };
 
@@ -87,57 +90,50 @@ export default function Cadastro() {
       texto="Crie sua conta em menos de um minuto e desbloqueie favoritos, comparador e alertas de preço."
       bullets={["Gratuito para interessados", "Anúncios com fotos e histórico de preços", "Compatibilidade com suas preferências"]}
     >
-      {status === "ok" ? (
-        <div className="success">
-          <div className="success-ico"><Icon.Check width={34} height={34} strokeWidth={2.6} /></div>
-          <h1>Conta criada, {form.nome.split(" ")[0]}!</h1>
-          <p>{tipo === "anunciante" ? "Você já pode cadastrar o seu primeiro imóvel." : "Agora é só explorar e salvar os seus favoritos."}</p>
-          <Link to="/login" className="btn btn-primary">Entrar na minha conta</Link>
+      <form onSubmit={submit} noValidate>
+        <header className="auth-head">
+          <span className="eyebrow">Cadastro</span>
+          <h1>Crie sua conta</h1>
+          <p>Já tem conta? <Link to="/login">Entrar</Link></p>
+        </header>
+
+        <div className="tipo" role="radiogroup" aria-label="Como você vai usar a Morada?">
+          <p className="tipo-title">Como você vai usar a Morada?</p>
+          {TIPOS.map(({ v, titulo, desc, Ico }) => (
+            <label key={v} className={tipo === v ? "on" : ""}>
+              <input type="radio" name="tipo" value={v} checked={tipo === v} onChange={() => setTipo(v)} />
+              <span className="tipo-ico"><Ico width={20} height={20} /></span>
+              <span><strong>{titulo}</strong><small>{desc}</small></span>
+              <i className="tipo-check"><Icon.Check width={12} height={12} strokeWidth={3.5} /></i>
+            </label>
+          ))}
         </div>
-      ) : (
-        <form onSubmit={submit} noValidate>
-          <header className="auth-head">
-            <span className="eyebrow">Cadastro</span>
-            <h1>Crie sua conta</h1>
-            <p>Já tem conta? <Link to="/login">Entrar</Link></p>
-          </header>
 
-          <div className="tipo" role="radiogroup" aria-label="Como você vai usar a Morada?">
-            <p className="tipo-title">Como você vai usar a Morada?</p>
-            {TIPOS.map(({ v, titulo, desc, Ico }) => (
-              <label key={v} className={tipo === v ? "on" : ""}>
-                <input type="radio" name="tipo" value={v} checked={tipo === v} onChange={() => setTipo(v)} />
-                <span className="tipo-ico"><Ico width={20} height={20} /></span>
-                <span><strong>{titulo}</strong><small>{desc}</small></span>
-                <i className="tipo-check"><Icon.Check width={12} height={12} strokeWidth={3.5} /></i>
-              </label>
-            ))}
-          </div>
+        <Field id="nome" label="Nome completo" icon={Icon.User} autoComplete="name" value={form.nome} onChange={set("nome")} error={erros.nome} />
+        <div className="two">
+          <Field id="email" label="E-mail" icon={Icon.Mail} type="email" autoComplete="email" value={form.email} onChange={set("email")} error={erros.email} />
+          <Field id="telefone" label="Telefone (opcional)" icon={Icon.Phone} type="tel" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={set("telefone", maskTel)} error={erros.telefone} />
+        </div>
+        <Field id="senha" label="Senha" icon={Icon.Lock} type="password" autoComplete="new-password" value={form.senha} onChange={set("senha")} error={erros.senha} />
 
-          <Field id="nome" label="Nome completo" icon={Icon.User} autoComplete="name" value={form.nome} onChange={set("nome")} error={erros.nome} />
-          <div className="two">
-            <Field id="email" label="E-mail" icon={Icon.Mail} type="email" autoComplete="email" value={form.email} onChange={set("email")} error={erros.email} />
-            <Field id="telefone" label="Telefone (opcional)" icon={Icon.Phone} type="tel" inputMode="tel" autoComplete="tel" value={form.telefone} onChange={set("telefone", maskTel)} error={erros.telefone} />
-          </div>
-          <Field id="senha" label="Senha" icon={Icon.Lock} type="password" autoComplete="new-password" value={form.senha} onChange={set("senha")} error={erros.senha} />
+        <div className={`meter ${form.senha ? "show" : ""}`} data-n={nivel} aria-live="polite">
+          <div className="meter-bars">{[0, 1, 2, 3].map((i) => <span key={i} className={i < nivel ? "on" : ""} />)}</div>
+          <small>Força da senha: <b>{NIVEIS[nivel]}</b></small>
+        </div>
 
-          <div className={`meter ${form.senha ? "show" : ""}`} data-n={nivel} aria-live="polite">
-            <div className="meter-bars">{[0, 1, 2, 3].map((i) => <span key={i} className={i < nivel ? "on" : ""} />)}</div>
-            <small>Força da senha: <b>{NIVEIS[nivel]}</b></small>
-          </div>
+        <label className={`check terms ${erros.aceite ? "has-error" : ""}`}>
+          <input type="checkbox" checked={aceite} onChange={(e) => { setAceite(e.target.checked); setErros({ ...erros, aceite: undefined }); }} />
+          <span className="check-box"><Icon.Check width={13} height={13} strokeWidth={3} /></span>
+          <span>Li e aceito os <a href="#termos" className="link">Termos de uso</a> e a <a href="#privacidade" className="link">Política de privacidade</a>.</span>
+        </label>
+        {erros.aceite && <p className="field-err show" role="alert">{erros.aceite}</p>}
 
-          <label className={`check terms ${erros.aceite ? "has-error" : ""}`}>
-            <input type="checkbox" checked={aceite} onChange={(e) => { setAceite(e.target.checked); setErros({ ...erros, aceite: undefined }); }} />
-            <span className="check-box"><Icon.Check width={13} height={13} strokeWidth={3} /></span>
-            <span>Li e aceito os <a href="#termos" className="link">Termos de uso</a> e a <a href="#privacidade" className="link">Política de privacidade</a>.</span>
-          </label>
-          {erros.aceite && <p className="field-err show" role="alert">{erros.aceite}</p>}
+        {erros._api && <span className="err" role="alert">{erros._api}</span>}
 
-          <button className="btn btn-primary btn-block" disabled={status === "loading"}>
-            {status === "loading" ? <><span className="spinner" /> Criando conta…</> : <>Criar conta <Icon.Arrow width={18} height={18} /></>}
-          </button>
-        </form>
-      )}
+        <button className="btn btn-primary btn-block" disabled={status === "loading"}>
+          {status === "loading" ? <><span className="spinner" /> Criando conta…</> : <>Criar conta <Icon.Arrow width={18} height={18} /></>}
+        </button>
+      </form>
     </AuthLayout>
   );
 }

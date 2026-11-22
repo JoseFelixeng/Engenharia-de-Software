@@ -1,6 +1,6 @@
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { me } from "./services/mockApi.js";
+import { Routes, Route, useLocation, useNavigate, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { AuthProvider, useAuth } from "./services/auth.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Cadastro from "./pages/Cadastro.jsx";
@@ -9,46 +9,39 @@ import BuscaComprador from "./pages/BuscaComprador.jsx";
 import Admin from "./pages/Admin.jsx";
 import Perfil from "./pages/Perfil.jsx";
 
+const ROTAS_PROTEGIDAS = ["/comprador", "/vendedor", "/admin", "/perfil"];
+
 function ScrollTop() {
   const { pathname } = useLocation();
-  useEffect(()=> {
-    window.scrollTo(0, 0)
+  useEffect(() => {
+    window.scrollTo(0, 0);
   }, [pathname]);
   return null;
 }
 
-export default function App() {
-  const [usuario, setUsuario] = useState(null);
-  const [carregando, setCarregando] = useState(true);
+function AppRoutes() {
+  const { usuario, carregando } = useAuth();
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  const ehAutenticado = !!usuario;
-  const ehAdmin = usuario && usuario.tipo_usuario === "administrador";
-  const ehAnunciante = usuario && ["proprietario", "corretor", "administrador"].includes(usuario.tipo_usuario);
+  const autenticado = !!usuario;
+  const ehAdmin = usuario?.tipo_usuario === "administrador";
+  const ehAnunciante =
+    !!usuario && ["proprietario", "corretor", "administrador"].includes(usuario.tipo_usuario);
 
   useEffect(() => {
-    const token = localStorage.getItem("morada_token");
-    if (token) {
-      me(token)
-        .then((u) => setUsuario(u))
-        .catch(() => {
-          localStorage.removeItem("morada_token");
-          localStorage.removeItem("morada_usuario");
-        })
-        .finally(() => setCarregando(false));
-    } else {
-      setCarregando(false);
+    if (!carregando && !autenticado && ROTAS_PROTEGIDAS.includes(pathname)) {
+      navigate("/login", { replace: true });
     }
-  }, []);
-
-  useEffect(() => {
-    if (!carregando && !ehAutenticado && (pathname === "/comprador" || pathname === "/vendedor" || pathname === "/admin" || pathname === "/perfil")) {
-      navigate("/login");
-    }
-  }, [carregando, ehAutenticado, pathname, navigate]);
+  }, [carregando, autenticado, pathname, navigate]);
 
   if (carregando) return null;
+
+  const exigirPerfil = (cond, elemento) => {
+    if (cond) return elemento;
+    if (!autenticado) return null; // o guard acima redireciona para /login
+    return <Navigate to="/" replace />;
+  };
 
   return (
     <>
@@ -57,12 +50,20 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/cadastro" element={<Cadastro />} />
-        <Route path="/comprador" element={ehAutenticado ? <BuscaComprador /> : null} />
-        <Route path="/vendedor" element={ehAnunciante ? <DashboardVendedor /> : null} />
-        <Route path="/admin" element={ehAdmin ? <Admin /> : null} />
-        <Route path="/perfil" element={ehAutenticado ? <Perfil /> : null} />
+        <Route path="/comprador" element={exigirPerfil(autenticado, <BuscaComprador />)} />
+        <Route path="/vendedor" element={exigirPerfil(ehAnunciante, <DashboardVendedor />)} />
+        <Route path="/admin" element={exigirPerfil(ehAdmin, <Admin />)} />
+        <Route path="/perfil" element={exigirPerfil(autenticado, <Perfil />)} />
         <Route path="*" element={<Home />} />
       </Routes>
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppRoutes />
+    </AuthProvider>
   );
 }

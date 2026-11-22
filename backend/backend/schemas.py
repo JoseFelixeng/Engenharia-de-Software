@@ -1,7 +1,4 @@
 """Schemas (Pydantic) de entrada e saída da API Morada.
-
-A validação de toda entrada do usuário acontece aqui, no servidor,
-mesmo que o frontend já valide (AGENTS.md).
 """
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 

@@ -2,11 +2,19 @@
  * Ilustração SVG do imóvel (placeholder até existirem fotos reais em FOTO_IMOVEL.URL_foto).
  * Gera cenas diferentes conforme o tipo e usa a paleta do imóvel.
  */
+const PALETA_PADRAO = ["#dbe6f3", "#9fb9de", "#1d3b6f"];
+const PALETAS = {
+  Casa: ["#f0e2c8", "#d9b878", "#1d3b6f"],
+  Apartamento: ["#d6e2f2", "#9db6e0", "#1d3b6f"],
+  Cobertura: ["#e2e6ef", "#b3bdd4", "#1d3b6f"],
+  Studio: ["#f3ead3", "#ddc48a", "#1d3b6f"],
+};
+
 export default function PropertyArt({ tipo, paleta }) {
-  const [sky1, sky2, wall] = paleta;
-  const id = `g-${tipo}-${sky1.slice(1)}`;
+  const [sky1, sky2, wall] = paleta || PALETAS[tipo] || PALETA_PADRAO;
+  const id = `g-${tipo}-${sky1.replace("#", "")}`;
   return (
-    <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" className="art" role="img" aria-label={`Ilustração de ${tipo}`}>
+    <svg viewBox="0 0 400 260" preserveAspectRatio="xMidYMid slice" className="art" role="img" aria-label={`Ilustração de ${tipo || "imóvel"}`}>
       <defs>
         <linearGradient id={id} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={sky1} />
@@ -27,7 +35,7 @@ export default function PropertyArt({ tipo, paleta }) {
           <path d="M80 120 200 56l120 64z" fill="#14231f" opacity=".9" />
           <rect x="122" y="140" width="40" height="34" rx="3" fill="#fff" opacity=".9" />
           <rect x="238" y="140" width="40" height="34" rx="3" fill="#fff" opacity=".9" />
-          <rect x="182" y="156" width="36" height="56" rx="3" fill="#e2603a" />
+          <rect x="182" y="156" width="36" height="56" rx="3" fill="#c7963c" />
           <circle cx="212" cy="186" r="2.5" fill="#fff" />
           <rect x="40" y="196" width="40" height="16" rx="8" fill="#6fcf97" opacity=".9" />
           <rect x="330" y="190" width="34" height="22" rx="8" fill="#6fcf97" opacity=".9" />
@@ -41,7 +49,7 @@ export default function PropertyArt({ tipo, paleta }) {
               <rect key={`${r}-${c}`} x={140 + c * 44} y={62 + r * 36} width="28" height="22" rx="3" fill="#fff" opacity={(r + c) % 3 === 0 ? 0.95 : 0.6} />
             )),
           )}
-          <rect x="186" y="176" width="28" height="36" rx="3" fill="#e2603a" />
+          <rect x="186" y="176" width="28" height="36" rx="3" fill="#c7963c" />
           {tipo === "Cobertura" && <rect x="132" y="30" width="136" height="18" rx="4" fill="#14231f" opacity=".85" />}
           <rect x="60" y="150" width="46" height="62" rx="5" fill={wall} opacity=".55" />
           <rect x="296" y="130" width="50" height="82" rx="5" fill={wall} opacity=".45" />

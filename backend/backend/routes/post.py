@@ -43,6 +43,7 @@ def _exigir_dono_ou_admin(imovel: Imovel, usuario: Usuario) -> None:
 @router.get("", response_model=list[ImovelRead])
 def listar(
     db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
     finalidade: Finalidade | None = None,
     cidade: str | None = Query(default=None, max_length=80),
     bairro: str | None = Query(default=None, max_length=80),
@@ -77,8 +78,47 @@ def listar(
     )
 
 
+@router.get("/contatos", response_model=list[ContatoRead])
+def listar_contatos(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
+    """Lista os interessados que entraram em contato com os imóveis do anunciante."""
+    if usuario.tipo_usuario not in PERFIS_ANUNCIANTE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas anunciantes podem ver os interessados.",
+        )
+    contatos = (
+        db.query(Contato)
+        .join(Imovel, Contato.imovel_id == Imovel.id)
+        .filter(Imovel.anunciante_id == usuario.id)
+        .order_by(Contato.data.desc())
+        .all()
+    )
+    resultado = []
+    for c in contatos:
+        interessado = db.query(Usuario).filter(Usuario.id == c.interessado_id).first()
+        resultado.append(
+            ContatoRead(
+                id=c.id,
+                imovel_id=c.imovel_id,
+                interessado_id=c.interessado_id,
+                interessado_nome=interessado.nome if interessado else None,
+                interessado_email=interessado.email if interessado else None,
+                mensagem=c.mensagem,
+                data=c.data,
+            )
+        )
+    return resultado
+
+
 @router.get("/{imovel_id}", response_model=ImovelRead)
-def detalhe(imovel_id: int, db: Session = Depends(get_db)):
+def detalhe(
+    imovel_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
     return _buscar_imovel(db, imovel_id)
 
 
@@ -116,41 +156,6 @@ def criar(
     db.add(imovel)
     db.commit()
     return _buscar_imovel(db, imovel.id)
-
-
-@router.get("/contatos", response_model=list[ContatoRead])
-def listar_contatos(
-    db: Session = Depends(get_db),
-    usuario: Usuario = Depends(obter_usuario_atual),
-):
-    """Lista os interessados que entraram em contato com os imóveis do anunciante."""
-    if usuario.tipo_usuario not in PERFIS_ANUNCIANTE:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas anunciantes podem ver os interessados.",
-        )
-    contatos = (
-        db.query(Contato)
-        .join(Imovel, Contato.imovel_id == Imovel.id)
-        .filter(Imovel.anunciante_id == usuario.id)
-        .order_by(Contato.data.desc())
-        .all()
-    )
-    resultado = []
-    for c in contatos:
-        interessado = db.query(Usuario).filter(Usuario.id == c.interessado_id).first()
-        resultado.append(
-            ContatoRead(
-                id=c.id,
-                imovel_id=c.imovel_id,
-                interessado_id=c.interessado_id,
-                interessado_nome=interessado.nome if interessado else None,
-                interessado_email=interessado.email if interessado else None,
-                mensagem=c.mensagem,
-                data=c.data,
-            )
-        )
-    return resultado
 
 
 @router.patch("/{imovel_id}", response_model=ImovelRead)

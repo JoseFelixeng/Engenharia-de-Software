@@ -1,44 +1,38 @@
-import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
-import { me } from "../services/mockApi.js";
+import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
+function iniciaisDoNome(nome) {
+  const partes = (nome || "").trim().split(/\s+/).filter(Boolean);
+  if (!partes.length) return "•";
+  const primeira = partes[0][0] || "";
+  const ultima = partes.length > 1 ? partes[partes.length - 1][0] || "" : "";
+  return (primeira + ultima).toUpperCase();
+}
+
+function formatarData(valor) {
+  if (!valor) return "—";
+  const d = new Date(valor);
+  return Number.isNaN(d.getTime()) ? "—" : d.toLocaleDateString("pt-BR");
+}
+
 export default function Perfil() {
-  const [usuario, setUsuario] = useState(null);
-  const [carregando, setCarregando] = useState(true);
+  const { usuario, logout } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("morada_token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    me(token)
-      .then((u) => setUsuario(u))
-      .catch(() => {
-        localStorage.removeItem("morada_token");
-        localStorage.removeItem("morada_usuario");
-        navigate("/login");
-      })
-      .finally(() => setCarregando(false));
-  }, [navigate]);
-
-  const logout = () => {
-    localStorage.removeItem("morada_token");
-    localStorage.removeItem("morada_usuario");
-    navigate("/");
-  };
-
-  if (carregando) return null;
   if (!usuario) return null;
 
   const ehAdministrador = usuario.tipo_usuario === "administrador";
   const ehAnunciante = ["proprietario", "corretor", "administrador"].includes(usuario.tipo_usuario);
+
+  const sair = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <>
@@ -49,14 +43,14 @@ export default function Perfil() {
             <h1>Meu perfil</h1>
             <p>Sua conta na Morada · {usuario.tipo_usuario}</p>
           </div>
-          <button className="btn btn-ghost" onClick={logout}>
+          <button className="btn btn-ghost" onClick={sair}>
             <Icon.Arrow width={16} height={16} style={{ transform: "rotate(180deg)" }} /> Sair
           </button>
         </div>
 
         <div className="container perfil-card">
           <div className="perfil-avatar">
-            <span>{usuario.nome.split(" ")[0][0]}{usuario.nome.split(" ")[1]?.[0]}</span>
+            <span>{iniciaisDoNome(usuario.nome)}</span>
           </div>
           <div className="perfil-info">
             <h2>{usuario.nome}</h2>
@@ -70,7 +64,7 @@ export default function Perfil() {
                 {usuario.situacao === "ativa" ? "Ativa" : "Inativa"}
               </span>
             </div>
-            <small>Cadastrado em {new Date(usuario.data_cadastro).toLocaleDateString("pt-BR")}</small>
+            <small>Cadastrado em {formatarData(usuario.data_cadastro)}</small>
           </div>
         </div>
 

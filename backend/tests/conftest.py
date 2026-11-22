@@ -62,7 +62,7 @@ def usuario(client):
         "senha": "Minha Senha 123",
     })
     assert res.status_code == 201, res.text
-    return res.json()
+    return res.json()["usuario"]
 
 
 @pytest.fixture()

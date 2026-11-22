@@ -1,221 +1,255 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
+import PropertyCard from "../components/PropertyCard.jsx";
+import PropertyArt from "../components/PropertyArt.jsx";
+import { Icon } from "../components/Icons.jsx";
+import { brl, imoveis as DESTAQUES } from "../data/imoveis.js";
+import { listarImoveis } from "../services/mockApi.js";
+import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/home.css";
 
-/* Troque por seu AuthContext quando tiver um. Aqui o login é lido do localStorage ("user"). */
-function useAuth() {
-  try {
-    const raw = localStorage.getItem("user");
-    return { user: raw ? JSON.parse(raw) : null };
-  } catch {
-    return { user: null };
-  }
-}
+const CATEGORIAS = ["Todos", "Casa", "Apartamento", "Cobertura", "Studio"];
 
-const CATEGORIES = ["Todos", "Apartamentos", "Casas", "Kitnets", "Comercial"];
-
-const LISTINGS = [
-  { id: 1, title: "Apartamento com vista para o mar", city: "Ponta Negra, Natal", price: 2800, beds: 3, baths: 2, area: 92, type: "Apartamentos", tone: "#BFD7F6" },
-  { id: 2, title: "Casa com quintal e churrasqueira", city: "Capim Macio, Natal", price: 3500, beds: 4, baths: 3, area: 180, type: "Casas", tone: "#CDEBDD" },
-  { id: 3, title: "Kitnet mobiliada perto da UFRN", city: "Lagoa Nova, Natal", price: 950, beds: 1, baths: 1, area: 28, type: "Kitnets", tone: "#F6E3BF" },
-  { id: 4, title: "Sala comercial no centro", city: "Petrópolis, Natal", price: 2200, beds: 0, baths: 1, area: 45, type: "Comercial", tone: "#DAD3F2" },
-  { id: 5, title: "Apartamento reformado, 2 vagas", city: "Tirol, Natal", price: 2100, beds: 2, baths: 2, area: 70, type: "Apartamentos", tone: "#F4D3D3" },
-  { id: 6, title: "Casa térrea em condomínio", city: "Neópolis, Natal", price: 2900, beds: 3, baths: 2, area: 120, type: "Casas", tone: "#C9E7EE" },
+const BENEFICIOS = [
+  { t: "Anuncie com facilidade", d: "Cadastre seu imóvel em poucos passos, sem burocracia.", ico: Icon.House },
+  { t: "Encontre interessados", d: "Seu anúncio chega a quem procura moradia na sua região.", ico: Icon.Search },
+  { t: "Gerencie seus anúncios", d: "Edite, pause e acompanhe o interesse em um só lugar.", ico: Icon.Scale },
 ];
 
-const brl = (n) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-
-function HouseArt({ tone }) {
-  return (
-    <svg viewBox="0 0 200 120" className="hm-art" aria-hidden="true">
-      <rect width="200" height="120" fill={tone} />
-      <circle cx="160" cy="28" r="14" fill="#FFFFFF" opacity=".7" />
-      <rect x="0" y="92" width="200" height="28" fill="#142B4A" opacity=".12" />
-      <path d="M52 92V56l48-30 48 30v36z" fill="#FFFFFF" />
-      <path d="M44 58l56-36 56 36" fill="none" stroke="#142B4A" strokeWidth="5" strokeLinejoin="round" strokeLinecap="round" />
-      <rect x="90" y="66" width="20" height="26" rx="3" fill="#2563EB" />
-      <rect x="64" y="64" width="16" height="14" rx="2" fill="#BFD7F6" />
-      <rect x="120" y="64" width="16" height="14" rx="2" fill="#BFD7F6" />
-    </svg>
-  );
-}
-
-function LockedCard({ listing }) {
-  return (
-    <article className="hm-card hm-card--locked">
-      <div className="hm-card__media hm-blur">
-        <HouseArt tone={listing.tone} />
-      </div>
-      <div className="hm-card__body">
-        <div className="hm-skel hm-skel--lg" />
-        <div className="hm-skel" />
-        <div className="hm-skel hm-skel--sm" />
-      </div>
-      <div className="hm-lock">
-        <span className="hm-lock__icon" aria-hidden="true">🔒</span>
-        <strong>Entre para ver este imóvel</strong>
-        <Link to="/login" className="hm-btn hm-btn--primary hm-btn--sm">Entrar</Link>
-      </div>
-    </article>
-  );
-}
-
-function ListingCard({ listing }) {
-  const [fav, setFav] = useState(false);
-  return (
-    <article className="hm-card">
-      <div className="hm-card__media">
-        <HouseArt tone={listing.tone} />
-        <span className="hm-tag">{listing.type}</span>
-        <button
-          type="button"
-          className={`hm-fav ${fav ? "is-on" : ""}`}
-          aria-pressed={fav}
-          aria-label={fav ? "Remover dos favoritos" : "Salvar nos favoritos"}
-          onClick={() => setFav(!fav)}
-        >
-          {fav ? "♥" : "♡"}
-        </button>
-      </div>
-      <div className="hm-card__body">
-        <h3 className="hm-card__title">{listing.title}</h3>
-        <p className="hm-card__city">{listing.city}</p>
-        <ul className="hm-specs">
-          {listing.beds > 0 && <li>{listing.beds} quartos</li>}
-          <li>{listing.baths} banheiros</li>
-          <li>{listing.area} m²</li>
-        </ul>
-        <div className="hm-card__foot">
-          <p className="hm-price">{brl(listing.price)}<span>/mês</span></p>
-          <Link to={`/comprador?imovel=${listing.id}`} className="hm-btn hm-btn--soft hm-btn--sm">Ver detalhes</Link>
-        </div>
-      </div>
-    </article>
-  );
-}
+const PASSOS = [
+  { n: "01", t: "Crie sua conta", d: "Leva menos de um minuto e é gratuito para quem procura imóvel." },
+  { n: "02", t: "Publique ou busque", d: "Anuncie seu imóvel ou encontre o ideal com filtros de preço e localização." },
+  { n: "03", t: "Conecte-se", d: "Fale direto com anunciantes e interessados pela plataforma." },
+];
 
 export default function Home() {
-  const { user } = useAuth();
-  const [category, setCategory] = useState("Todos");
-  const [query, setQuery] = useState("");
+  const { usuario } = useAuth();
+  const [categoria, setCategoria] = useState("Todos");
+  const [busca, setBusca] = useState("");
+  const [imoveis, setImoveis] = useState([]);
+  const [carga, setCarga] = useState("idle");
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return LISTINGS.filter(
-      (l) =>
-        (category === "Todos" || l.type === category) &&
-        (!q || l.title.toLowerCase().includes(q) || l.city.toLowerCase().includes(q))
+  useEffect(() => {
+    let ativo = true;
+    if (!usuario) {
+      setImoveis([]);
+      setCarga("idle");
+      return () => { ativo = false; };
+    }
+    setCarga("loading");
+    listarImoveis()
+      .then((lista) => {
+        if (ativo) {
+          setImoveis(lista || []);
+          setCarga("ok");
+        }
+      })
+      .catch(() => {
+        if (ativo) setCarga("fail");
+      });
+    return () => { ativo = false; };
+  }, [usuario]);
+
+  const visiveis = useMemo(() => {
+    const q = busca.trim().toLowerCase();
+    return imoveis.filter((i) =>
+      (categoria === "Todos" || i.tipo === categoria) &&
+      (!q || `${i.titulo} ${i.cidade} ${i.bairro}`.toLowerCase().includes(q))
     );
-  }, [category, query]);
-
-  const list = user ? visible : LISTINGS.slice(0, 3);
+  }, [imoveis, categoria, busca]);
 
   return (
     <>
       <Navbar />
-      <main className="hm">
+      <main>
         {/* HERO */}
-        <section className="hm-hero">
-          <div className="hm-hero__text">
-            <h1>Encontre o lugar certo para morar. Anuncie o seu com segurança.</h1>
-            <p>Uma vitrine de imóveis para alugar, com anúncios verificados. Crie sua conta gratuita para ver preços, fotos e falar com os anunciantes.</p>
-            <div className="hm-actions">
-              {user ? (
-                <a href="#imoveis" className="hm-btn hm-btn--primary">Ver imóveis</a>
-              ) : (
-                <>
-                  <Link to="/cadastro" className="hm-btn hm-btn--primary">Criar conta grátis</Link>
-                  <Link to="/login" className="hm-btn hm-btn--ghost">Já tenho conta</Link>
-                </>
-              )}
-              <Link to="/vendedor" className="hm-link">Quero anunciar meu imóvel</Link>
-            </div>
+        <section className="hero">
+          <div className="hero-bg" aria-hidden="true">
+            <span className="blob b1" />
+            <span className="blob b2" />
+            <span className="grid" />
           </div>
+          <div className="container hero-inner">
+            <div className="hero-copy">
+              <span className="hero-pill"><i /> {usuario ? `Bem-vindo, ${usuario.nome?.split(" ")[0] || "de volta"}` : "Anúncios verificados"}</span>
+              <h1>Encontre o lugar certo para morar. Anuncie o seu com segurança.</h1>
+              <p>Uma vitrine de imóveis para alugar e comprar. Crie sua conta gratuita para ver preços, fotos e falar com os anunciantes.</p>
+              <div className="hm-actions" style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+                {usuario ? (
+                  <a href="#imoveis" className="btn btn-primary">Ver imóveis</a>
+                ) : (
+                  <>
+                    <Link to="/cadastro" className="btn btn-primary">Criar conta grátis</Link>
+                    <Link to="/login" className="btn btn-ghost">Já tenho conta</Link>
+                  </>
+                )}
+                <Link to="/vendedor" className="btn btn-ghost">Quero anunciar</Link>
+              </div>
+            </div>
 
-          <div className="hm-hero__visual" aria-hidden="true">
-            <div className="hm-stack hm-stack--a"><HouseArt tone="#BFD7F6" /></div>
-            <div className="hm-stack hm-stack--b"><HouseArt tone="#CDEBDD" /></div>
-            <div className="hm-stack hm-stack--c"><HouseArt tone="#F6E3BF" /></div>
+            <div className="hero-visual" aria-hidden="true">
+              <div className="fl fl-1">
+                <div className="fl-card big">
+                  <div className="fl-img"><PropertyArt tipo="Casa" paleta={DESTAQUES[0].paleta} /></div>
+                  <div className="fl-info"><strong>{brl(DESTAQUES[0].preco)}</strong><span>{DESTAQUES[0].bairro}</span></div>
+                </div>
+              </div>
+              <div className="fl fl-2">
+                <div className="fl-card">
+                  <div className="fl-img"><PropertyArt tipo="Apartamento" paleta={DESTAQUES[1].paleta} /></div>
+                  <div className="fl-info"><strong>{brl(DESTAQUES[1].preco)}<small>/mês</small></strong><span>{DESTAQUES[1].bairro}</span></div>
+                </div>
+              </div>
+              <div className="fl fl-3">
+                <div className="fl-toast"><span className="dot-ok"><Icon.Check width={18} height={18} /></span><span><strong>Perfil verificado</strong><small>Documentos conferidos</small></span></div>
+              </div>
+            </div>
           </div>
         </section>
 
-        {/* LOJA */}
-        <section id="imoveis" className="hm-shop">
-          <header className="hm-shop__head">
-            <div>
-              <h2>{user ? `Olá, ${user.nome || user.name || "bem-vindo"}! Veja os imóveis disponíveis` : "Imóveis em destaque"}</h2>
-              <p>{user ? `${visible.length} imóveis encontrados` : "Entre na sua conta para ver os anúncios completos."}</p>
-            </div>
-            {user && (
-              <input
-                className="hm-search"
-                type="search"
-                placeholder="Buscar por bairro ou título"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                aria-label="Buscar imóveis"
-              />
-            )}
-          </header>
-
-          {user && (
-            <div className="hm-chips" role="tablist" aria-label="Categorias">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c}
-                  role="tab"
-                  aria-selected={category === c}
-                  className={`hm-chip ${category === c ? "is-active" : ""}`}
-                  onClick={() => setCategory(c)}
-                >
-                  {c}
-                </button>
-              ))}
-            </div>
-          )}
-
-          <div className="hm-grid">
-            {list.map((l) => (user ? <ListingCard key={l.id} listing={l} /> : <LockedCard key={l.id} listing={l} />))}
-          </div>
-
-          {user && visible.length === 0 && (
-            <p className="hm-empty">Nenhum imóvel encontrado. Tente outra categoria ou outro bairro.</p>
-          )}
-
-          {!user && (
-            <div className="hm-gate">
+        {/* CATÁLOGO / GATE */}
+        <section id="imoveis" className="section">
+          <div className="container">
+            <div className="section-head">
               <div>
-                <h3>Cadastre-se para liberar todos os anúncios</h3>
-                <p>É gratuito e leva menos de um minuto.</p>
+                <span className="eyebrow">Imóveis</span>
+                <h2>{usuario ? "Veja os imóveis disponíveis" : "Imóveis em destaque"}</h2>
               </div>
-              <Link to="/cadastro" className="hm-btn hm-btn--green">Criar conta grátis</Link>
+              {usuario && (
+                <input
+                  className="hm-search"
+                  type="search"
+                  placeholder="Buscar por título, bairro ou cidade"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  aria-label="Buscar imóveis"
+                />
+              )}
             </div>
-          )}
+
+            {usuario ? (
+              <>
+                <div className="chips" style={{ marginBottom: 28 }}>
+                  {CATEGORIAS.map((c) => (
+                    <button key={c} className={categoria === c ? "on" : ""} onClick={() => setCategoria(c)}>
+                      {c}
+                    </button>
+                  ))}
+                </div>
+
+                {carga === "loading" && <div className="empty"><p>Carregando imóveis…</p></div>}
+
+                {carga === "fail" && (
+                  <div className="empty"><p>Não foi possível carregar os imóveis agora.</p></div>
+                )}
+
+                {carga === "ok" && visiveis.length > 0 && (
+                  <div className="grid-cards">
+                    {visiveis.map((im, idx) => (
+                      <PropertyCard key={im.id} imovel={im} delay={idx * 50} mostrarComparar={false} />
+                    ))}
+                  </div>
+                )}
+
+                {carga === "ok" && visiveis.length === 0 && (
+                  <div className="empty"><p>Nenhum imóvel encontrado. Tente outra categoria ou termo.</p></div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="grid-cards">
+                  {DESTAQUES.slice(0, 3).map((im) => (
+                    <article key={im.id} className="pcard">
+                      <div className="pcard-media">
+                        <PropertyArt tipo={im.tipo} paleta={im.paleta} />
+                        <div className="pcard-badges">
+                          <span className={`badge ${im.finalidade === "venda" ? "badge-dark" : "badge-light"}`}>
+                            {im.finalidade === "venda" ? "Venda" : "Aluguel"}
+                          </span>
+                        </div>
+                        <div className="pcard-price">{brl(im.preco)}</div>
+                        <div className="pcard-lock">
+                          <span className="pcard-lock__icon"><Icon.Lock width={20} height={20} /></span>
+                          <strong>Entre para ver este imóvel</strong>
+                          <Link to="/login" className="btn btn-primary btn-sm">Entrar</Link>
+                        </div>
+                      </div>
+                      <div className="pcard-body">
+                        <h3>{im.titulo}</h3>
+                        <p className="pcard-loc"><Icon.Pin width={15} height={15} /> {im.bairro}, {im.cidade} - {im.estado}</p>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="hm-gate" style={{ marginTop: 32 }}>
+                  <div>
+                    <h3>Cadastre-se para liberar todos os anúncios</h3>
+                    <p>É gratuito e leva menos de um minuto.</p>
+                  </div>
+                  <Link to="/cadastro" className="btn btn-primary">Criar conta grátis</Link>
+                </div>
+              </>
+            )}
+          </div>
         </section>
 
         {/* BENEFÍCIOS */}
-        <section className="hm-benefits">
-          {[
-            { t: "Anuncie com facilidade", d: "Cadastre seu imóvel em poucos passos, sem burocracia.", i: "🏠" },
-            { t: "Encontre interessados", d: "Seu anúncio chega a quem procura moradia na sua região.", i: "🔎" },
-            { t: "Gerencie seus anúncios", d: "Edite, pause e acompanhe o interesse em um só lugar.", i: "📋" },
-          ].map((b) => (
-            <div key={b.t} className="hm-benefit">
-              <span className="hm-benefit__icon" aria-hidden="true">{b.i}</span>
-              <h3>{b.t}</h3>
-              <p>{b.d}</p>
+        <section className="section section-alt">
+          <div className="container">
+            <div className="center">
+              <span className="eyebrow">Diferenciais</span>
+              <h2>Uma plataforma pensada para conectar pessoas e imóveis</h2>
+              <p className="lead">Simples para anunciar, fácil para encontrar e segura para negociar.</p>
             </div>
-          ))}
+            <div className="features">
+              {BENEFICIOS.map(({ t, d, ico: Ico }) => (
+                <div key={t} className="feature">
+                  <span className="feature-ico"><Ico width={22} height={22} /></span>
+                  <h3>{t}</h3>
+                  <p>{d}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* COMO FUNCIONA */}
+        <section id="como-funciona" className="section">
+          <div className="container">
+            <div className="center">
+              <span className="eyebrow">Como funciona</span>
+              <h2>Em três passos você já está dentro</h2>
+            </div>
+            <ol className="steps">
+              {PASSOS.map((p) => (
+                <li key={p.n} className="step">
+                  <span className="step-n">{p.n}</span>
+                  <h3>{p.t}</h3>
+                  <p>{p.d}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
         </section>
 
         {/* CTA */}
-        <section className="hm-cta">
-          <h2>Pronto para anunciar seu imóvel?</h2>
-          <p>Comece agora e dê mais visibilidade ao seu anúncio.</p>
-          <Link to="/vendedor" className="hm-btn hm-btn--green">Começar meu anúncio</Link>
+        <section className="cta-wrap">
+          <div className="container">
+            <div className="cta">
+              <span className="cta-glow" aria-hidden="true" />
+              <div>
+                <h2>Pronto para anunciar seu imóvel?</h2>
+                <p>Comece agora e dê mais visibilidade ao seu anúncio.</p>
+              </div>
+              <div className="cta-actions">
+                <Link to="/cadastro" className="btn btn-light">Começar meu anúncio</Link>
+              </div>
+            </div>
+          </div>
         </section>
       </main>
       <Footer />

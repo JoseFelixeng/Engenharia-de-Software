@@ -4,50 +4,75 @@ import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
 import { criarImovel, atualizarImovel, listarContatos, listarImoveis } from "../services/mockApi.js";
+import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
+const NOVO_VAZIO = {
+  titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
+  cidade: "", estado: "RN", bairro: "", area_m2: "",
+  quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "", situacao: "disponivel",
+};
+
+const paraForm = (im) => ({
+  titulo: im.titulo || "",
+  tipo: im.tipo || "Casa",
+  finalidade: im.finalidade || "venda",
+  preco: im.preco ?? "",
+  cidade: im.cidade || "",
+  estado: im.estado || "RN",
+  bairro: im.bairro || "",
+  area_m2: im.area_m2 ?? "",
+  quartos: im.quartos ?? 0,
+  banheiros: im.banheiros ?? 0,
+  vagas_garagem: im.vagas_garagem ?? 0,
+  descricao: im.descricao || "",
+  situacao: im.situacao || "disponivel",
+});
+
 export default function DashboardVendedor() {
+  const { usuario } = useAuth();
   const [aba, setAba] = useState("anuncios"); // anuncios | interessados
   const [imoveis, setImoveis] = useState([]);
   const [contatos, setContatos] = useState([]);
-  const [carga, setCarga] = useState("idle");
-  const [novo, setNovo] = useState({
-    titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
-    cidade: "", estado: "RN", bairro: "", area_m2: "",
-    quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "",
-  });
+  const [cargaImoveis, setCargaImoveis] = useState("idle");
+  const [cargaContatos, setCargaContatos] = useState("idle");
+  const [novo, setNovo] = useState(NOVO_VAZIO);
   const [erros, setErros] = useState({});
-  const [status, setStatus] = useState("idle");
+  const [status, setStatus] = useState("idle"); // idle | loading | fail
   const [abrirModal, setAbrirModal] = useState(false);
-  const [editando, setEditando] = useState(null); // { imovel, modo: 'editar' }
+  const [editando, setEditando] = useState(null);
+
+  const token = () => localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || undefined;
+  const meuId = () => usuario?.id ?? JSON.parse(localStorage.getItem("morada_usuario") || "{}").id;
 
   async function carregarMeusImoveis() {
-    const usuario = JSON.parse(localStorage.getItem("morada_usuario") || "{}");
-    const dados = await listarImoveis({ anunciante_id: usuario.id });
-    setImoveis(dados.filter((i) => i.situacao !== "inativo"));
-  }
-
-  async function carregarContatos() {
-    setCarga("loading");
+    setCargaImoveis("loading");
     try {
-      const token = localStorage.getItem("morada_token");
-      const lista = await listarContatos(token);
-      setContatos(lista);
-      setCarga("ok");
+      const dados = await listarImoveis({ anunciante_id: meuId() });
+      setImoveis((dados || []).filter((i) => i.situacao !== "inativo"));
+      setCargaImoveis("ok");
     } catch {
-      setContatos([]);
-      setCarga("fail");
+      setImoveis([]);
+      setCargaImoveis("fail");
     }
   }
 
-  async function carregar() {
-    await carregarMeusImoveis();
-    await carregarContatos();
+  async function carregarContatos() {
+    setCargaContatos("loading");
+    try {
+      const lista = await listarContatos(token());
+      setContatos(lista || []);
+      setCargaContatos("ok");
+    } catch {
+      setContatos([]);
+      setCargaContatos("fail");
+    }
   }
 
   useEffect(() => {
-    carregar();
+    carregarMeusImoveis();
+    carregarContatos();
   }, []);
 
   const validar = () => {
@@ -65,6 +90,21 @@ export default function DashboardVendedor() {
     if (erros[k]) setErros({ ...erros, [k]: undefined });
   };
 
+  const payload = () => ({
+    titulo: novo.titulo,
+    tipo: novo.tipo,
+    finalidade: novo.finalidade,
+    preco: +novo.preco,
+    cidade: novo.cidade,
+    estado: novo.estado,
+    bairro: novo.bairro,
+    area_m2: +novo.area_m2,
+    quartos: +novo.quartos || 0,
+    banheiros: +novo.banheiros || 0,
+    vagas_garagem: +novo.vagas_garagem || 0,
+    descricao: novo.descricao,
+  });
+
   const submit = async (ev) => {
     ev.preventDefault();
     const e = validar();
@@ -72,57 +112,51 @@ export default function DashboardVendedor() {
     if (Object.keys(e).length) return;
     setStatus("loading");
     try {
-      const token = localStorage.getItem("morada_token") || undefined;
-      const criado = await criarImovel(novo, token);
+      const criado = await criarImovel(payload(), token());
       setImoveis((prev) => [criado, ...prev]);
       setAbrirModal(false);
-      setNovo({
-        titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
-        cidade: "", estado: "RN", bairro: "", area_m2: "",
-        quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "",
-      });
-      setStatus("ok");
+      setNovo(NOVO_VAZIO);
+      setEditando(null);
+      setStatus("idle");
     } catch {
       setStatus("fail");
     }
   };
 
+  const abrirNovo = () => {
+    setNovo(NOVO_VAZIO);
+    setEditando(null);
+    setErros({});
+    setStatus("idle");
+    setAbrirModal(true);
+  };
+
   const abrirEdicao = (imovel) => {
     setEditando({ ...imovel });
+    setNovo(paraForm(imovel));
+    setErros({});
+    setStatus("idle");
     setAbrirModal(true);
   };
 
   const submitEdicao = async (ev) => {
     ev.preventDefault();
     if (!editando) return;
+    const e = validar();
+    setErros(e);
+    if (Object.keys(e).length) return;
     setStatus("loading");
     try {
-      const token = localStorage.getItem("morada_token") || undefined;
-      const atualizado = await atualizarImovel(editando.id, {
-        titulo: novo.titulo,
-        tipo: novo.tipo,
-        finalidade: novo.finalidade,
-        preco: +novo.preco,
-        cidade: novo.cidade,
-        estado: novo.estado,
-        bairro: novo.bairro,
-        area_m2: +novo.area_m2,
-        quartos: +novo.quartos || 0,
-        banheiros: +novo.banheiros || 0,
-        vagas_garagem: +novo.vagas_garagem || 0,
-        descricao: novo.descricao,
-        situacao: novo.situacao || "disponivel",
-      }, token);
+      const atualizado = await atualizarImovel(
+        editando.id,
+        { ...payload(), situacao: novo.situacao || "disponivel" },
+        token(),
+      );
       setImoveis((prev) => prev.map((i) => (i.id === atualizado.id ? atualizado : i)));
       setAbrirModal(false);
       setEditando(null);
-      setNovo({
-        titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
-        cidade: "", estado: "RN", bairro: "", area_m2: "",
-        quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "",
-        situacao: "disponivel",
-      });
-      setStatus("ok");
+      setNovo(NOVO_VAZIO);
+      setStatus("idle");
     } catch {
       setStatus("fail");
     }
@@ -157,21 +191,23 @@ export default function DashboardVendedor() {
         {aba === "anuncios" && (
           <>
             <div className="container dashboard-header" style={{ marginTop: 0 }}>
-              <button className="btn btn-accent" onClick={() => {
-                setNovo({
-                  titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
-                  cidade: "", estado: "RN", bairro: "", area_m2: "",
-                  quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "",
-                  situacao: "disponivel",
-                });
-                setEditando(null);
-                setAbrirModal(true);
-              }}>
+              <button className="btn btn-accent" onClick={abrirNovo}>
                 <Icon.Plus /> Adicionar Anúncio
               </button>
             </div>
 
-            {carga === "ok" && imoveis.length > 0 ? (
+            {cargaImoveis === "loading" && (
+              <div className="container empty"><p>Carregando seus anúncios…</p></div>
+            )}
+
+            {cargaImoveis === "fail" && (
+              <div className="container empty">
+                <p>Não foi possível carregar seus anúncios.</p>
+                <button className="btn btn-ghost" onClick={carregarMeusImoveis}>Tentar novamente</button>
+              </div>
+            )}
+
+            {cargaImoveis === "ok" && imoveis.length > 0 && (
               <div className="container grid-cards">
                 {imoveis.map((im) => (
                   <article key={im.id} className="pcard">
@@ -203,19 +239,12 @@ export default function DashboardVendedor() {
                   </article>
                 ))}
               </div>
-            ) : (
+            )}
+
+            {cargaImoveis === "ok" && imoveis.length === 0 && (
               <div className="container empty">
                 <p>Você ainda não tem imóveis anunciados.</p>
-                <button className="btn btn-accent" onClick={() => {
-                  setNovo({
-                    titulo: "", tipo: "Casa", finalidade: "venda", preco: "",
-                    cidade: "", estado: "RN", bairro: "", area_m2: "",
-                    quartos: 0, banheiros: 0, vagas_garagem: 0, descricao: "",
-                    situacao: "disponivel",
-                  });
-                  setEditando(null);
-                  setAbrirModal(true);
-                }}>
+                <button className="btn btn-accent" onClick={abrirNovo}>
                   Cadastrar primeiro imóvel
                 </button>
               </div>
@@ -223,14 +252,23 @@ export default function DashboardVendedor() {
           </>
         )}
 
-        {/* ===== ABA: INTERESSADOS ===== */}
+        {/* ===== ABA: INTERESSADOS ===== ===== */}
         {aba === "interessados" && (
           <div className="container">
             <div className="dashboard-header" style={{ marginTop: 0 }}>
               <h2>Interessados</h2>
               <p>Pessoas que entraram em contato sobre seus imóveis.</p>
             </div>
-            {carga === "ok" && contatos.length > 0 ? (
+            {cargaContatos === "loading" && (
+              <div className="container empty"><p>Carregando interessados…</p></div>
+            )}
+            {cargaContatos === "fail" && (
+              <div className="container empty">
+                <p>Não foi possível carregar os interessados.</p>
+                <button className="btn btn-ghost" onClick={carregarContatos}>Tentar novamente</button>
+              </div>
+            )}
+            {cargaContatos === "ok" && contatos.length > 0 && (
               <div className="admin-lista">
                 <table className="admin-table">
                   <thead>
@@ -251,7 +289,8 @@ export default function DashboardVendedor() {
                   </tbody>
                 </table>
               </div>
-            ) : (
+            )}
+            {cargaContatos === "ok" && contatos.length === 0 && (
               <div className="container empty">
                 <p>Nenhum interessado entrou em contato ainda.</p>
               </div>

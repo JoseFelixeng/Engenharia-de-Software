@@ -16,7 +16,7 @@ from backend.schemas import (
 
 router = APIRouter(prefix="/auth", tags=["autenticação"])
 
-@router.post("/cadastro", response_model=UsuarioRead, status_code=status.HTTP_201_CREATED)
+@router.post("/cadastro", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def cadastrar(dados: UsuarioCreate, db: Session = Depends(get_db)):
     if db.query(Usuario).filter(Usuario.email == dados.email).first():
         raise HTTPException(
@@ -24,12 +24,13 @@ def cadastrar(dados: UsuarioCreate, db: Session = Depends(get_db)):
             detail="Já existe uma conta com este e-mail.",
         )
     usuario = Usuario( nome=dados.nome, email=dados.email, telefone=dados.telefone, senha_hash=hash_senha(dados.senha), tipo_usuario=dados.tipo_usuario, situacao="ativa",)
-    
+
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
 
-    return usuario
+    token = criar_token_acesso({"sub": str(usuario.id)})
+    return TokenResponse(access_token=token, usuario=UsuarioRead.model_validate(usuario))
 
 
 @router.post("/login", response_model=TokenResponse)

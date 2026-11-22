@@ -19,6 +19,8 @@ export const Icon = {
   Key: (p) => <svg {...base} {...p}><circle cx="8" cy="15" r="4" /><path d="m11 12 9-9M16 7l3 3" /></svg>,
   Scale: (p) => <svg {...base} {...p}><path d="M12 3v18M5 21h14M6 7h12M6 7l-3 7a3 3 0 0 0 6 0L6 7ZM18 7l-3 7a3 3 0 0 0 6 0l-3-7Z" /></svg>,
   Plus: (p) => <svg {...base} {...p}><path d="M12 5v14M5 12h14" /></svg>,
+  Home: (p) => <svg {...base} {...p}><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6" /></svg>,
+  House: (p) => <svg {...base} {...p}><path d="m3 11 9-8 9 8M5 10v10h14V10M9 20v-6h6v6" /></svg>,
   Target: (p) => <svg {...base} {...p}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5" /><circle cx="12" cy="12" r="1.2" /></svg>,
   Trend: (p) => <svg {...base} {...p}><path d="m3 17 6-6 4 4 8-9M15 6h6v6" /></svg>,
   Shield: (p) => <svg {...base} {...p}><path d="M12 3 4 6v6c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" /><path d="m9 12 2 2 4-4" /></svg>,

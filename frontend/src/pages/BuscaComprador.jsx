@@ -3,31 +3,34 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import PropertyCard from "../components/PropertyCard.jsx";
 import { Icon } from "../components/Icons.jsx";
+import { brl } from "../data/imoveis.js";
 import { listarImoveis } from "../services/mockApi.js";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
+const FILTROS_INICIAIS = { finalidade: "todos", cidade: "", tipo: "", quartos: "", preco_max: "" };
+
 export default function BuscaComprador() {
   const [imoveis, setImoveis] = useState([]);
-  const [carga, setCarga] = useState("idle");
-  const [filtros, setFiltros] = useState({
-    finalidade: "todos", cidade: "", tipo: "", quartos: "", preco_max: "",
-  });
+  const [carga, setCarga] = useState("idle"); // idle | loading | ok | fail
+  const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
+  const [comparacao, setComparacao] = useState([]);
+  const [modalComparar, setModalComparar] = useState(false);
 
-  useEffect(() => {
-    carregar();
-  }, []);
-
-  async function carregar() {
+  const carregar = async (filtrosAtuais = filtros) => {
     setCarga("loading");
     try {
-      const lista = await listarImoveis(filtros);
-      setImoveis(lista);
+      const lista = await listarImoveis(filtrosAtuais);
+      setImoveis(lista || []);
       setCarga("ok");
     } catch {
       setCarga("fail");
     }
-  }
+  };
+
+  useEffect(() => {
+    carregar(FILTROS_INICIAIS);
+  }, []);
 
   const lista = useMemo(() => {
     const q = filtros.cidade.trim().toLowerCase();
@@ -39,6 +42,17 @@ export default function BuscaComprador() {
       (!q || `${i.cidade} ${i.bairro}`.toLowerCase().includes(q))
     );
   }, [imoveis, filtros]);
+
+  const selecionados = useMemo(
+    () => comparacao.map((id) => imoveis.find((i) => i.id === id)).filter(Boolean),
+    [comparacao, imoveis],
+  );
+
+  const toggleComparar = (id) => {
+    setComparacao((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const limparComparar = () => setComparacao([]);
 
   return (
     <>
@@ -52,7 +66,7 @@ export default function BuscaComprador() {
         </div>
 
         <div className="container busca-filtros">
-          <form onSubmit={(ev) => { ev.preventDefault(); carregar(); }} noValidate className="filtros-form">
+          <form onSubmit={(ev) => { ev.preventDefault(); carregar(filtros); }} noValidate className="filtros-form">
             <div className="field">
               <label>Onde</label>
               <input value={filtros.cidade} onChange={(e) => setFiltros({ ...filtros, cidade: e.target.value })} placeholder="Cidade ou bairro" />
@@ -90,20 +104,76 @@ export default function BuscaComprador() {
           <h2>{lista.length} imóvel{lista.length !== 1 ? "s" : ""} encontrado{lista.length !== 1 ? "s" : ""}</h2>
         </div>
 
-        {carga === "ok" && lista.length === 0 ? (
+        {carga === "fail" && (
+          <div className="container empty">
+            <h3>Não foi possível carregar os imóveis</h3>
+            <button className="btn btn-ghost" onClick={() => carregar(filtros)}>Tentar novamente</button>
+          </div>
+        )}
+
+        {carga === "loading" && imoveis.length === 0 && (
+          <div className="container empty"><p>Buscando imóveis…</p></div>
+        )}
+
+        {carga !== "fail" && lista.length === 0 && carga !== "loading" && (
           <div className="container empty">
             <Icon.Search width={48} height={48} />
             <h3>Nenhum imóvel encontrado</h3>
             <p>Tente ajustar os filtros de busca.</p>
           </div>
-        ) : (
+        )}
+
+        {lista.length > 0 && (
           <div className="container grid-cards">
-            {lista.map((im) => (
-              <PropertyCard key={im.id} imovel={im} />
+            {lista.map((im, idx) => (
+              <PropertyCard
+                key={im.id}
+                imovel={im}
+                delay={idx * 60}
+                comparando={comparacao.includes(im.id)}
+                onToggleCompare={toggleComparar}
+              />
             ))}
           </div>
         )}
       </main>
+
+      {comparacao.length > 0 && (
+        <div className="cmp-tray show">
+          <span><b>{comparacao.length}</b> selecionado{comparacao.length !== 1 ? "s" : ""}</span>
+          <button className="cmp-clear" onClick={limparComparar} aria-label="Limpar seleção">
+            <Icon.Close width={16} height={16} />
+          </button>
+          <button className="btn btn-primary btn-sm" onClick={() => setModalComparar(true)}>Comparar</button>
+        </div>
+      )}
+
+      {modalComparar && (
+        <div className="modal-overlay" onClick={() => setModalComparar(false)}>
+          <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setModalComparar(false)}>Fechar</button>
+            <h2>Comparar imóveis</h2>
+            <div className="cmp-wrap">
+              <table className="cmp">
+                <thead>
+                  <tr>
+                    <th>Critério</th>
+                    {selecionados.map((im) => <th key={im.id}>{im.titulo}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>Preço</td>{selecionados.map((im) => <td key={im.id}>{brl(im.preco)}{im.finalidade === "aluguel" ? "/mês" : ""}</td>)}</tr>
+                  <tr><td>Quartos</td>{selecionados.map((im) => <td key={im.id}>{im.quartos}</td>)}</tr>
+                  <tr><td>Banheiros</td>{selecionados.map((im) => <td key={im.id}>{im.banheiros}</td>)}</tr>
+                  <tr><td>Vagas</td>{selecionados.map((im) => <td key={im.id}>{im.vagas_garagem}</td>)}</tr>
+                  <tr><td>Área</td>{selecionados.map((im) => <td key={im.id}>{im.area_m2} m²</td>)}</tr>
+                  <tr><td>Localização</td>{selecionados.map((im) => <td key={im.id}>{im.bairro}, {im.cidade}</td>)}</tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </>
