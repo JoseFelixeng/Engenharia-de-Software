@@ -219,11 +219,11 @@ export default function DashboardVendedor() {
                       <span className={`badge badge-${im.situacao === "disponivel" ? "dark" : "light"}`}>
                         {im.situacao === "disponivel" ? "Disponível" : im.situacao}
                       </span>
+                      <div className="pcard-price">{brl(im.preco)}</div>
                     </div>
                     <div className="pcard-body">
                       <h3>{im.titulo}</h3>
                       <p className="pcard-loc"><Icon.Pin width={15} height={15} /> {im.bairro}, {im.cidade} - {im.estado}</p>
-                      <div className="pcard-price">{brl(im.preco)}</div>
                       <ul className="pcard-specs">
                         <li><Icon.Bed width={17} height={17} /> {im.quartos}</li>
                         <li><Icon.Bath width={17} height={17} /> {im.banheiros}</li>
