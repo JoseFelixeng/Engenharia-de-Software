@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16-alpine
     container_name: morada-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -22,6 +23,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile.dev
     container_name: morada-backend
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -43,6 +45,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.dev
     container_name: morada-frontend
+    restart: unless-stopped
     depends_on:
       - backend
     environment:
