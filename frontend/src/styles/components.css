@@ -48,6 +48,7 @@
 .pcard-specs li { display: flex; align-items: center; gap: 6px; }
 .pcard-specs svg { color: var(--brand-2); }
 .pcard-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+.pcard-interesse { width: 100%; margin-top: 2px; }
 .pcard-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.88rem; color: var(--brand); transition: gap 0.3s var(--ease); }
 .pcard-link:hover { gap: 11px; }
 

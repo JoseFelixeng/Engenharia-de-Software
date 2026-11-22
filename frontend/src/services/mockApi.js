@@ -62,6 +62,10 @@ export async function listarContatos(token) {
   return _request("GET", "/imoveis/contatos", null, token);
 }
 
+export async function demonstrarInteresse(imovelId, mensagem, token) {
+  return _request("POST", `/imoveis/${imovelId}/contatos`, { mensagem: mensagem || null }, token);
+}
+
 export async function loginGoogle(credential) {
   return _request("POST", "/auth/google", { credential });
 }

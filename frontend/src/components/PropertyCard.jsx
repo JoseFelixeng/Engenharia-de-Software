@@ -3,7 +3,7 @@ import { Icon } from "./Icons.jsx";
 import PropertyArt from "./PropertyArt.jsx";
 import { brl } from "../data/imoveis.js";
 
-export default function PropertyCard({ imovel, comparando = false, onToggleCompare, delay = 0, mostrarComparar = true }) {
+export default function PropertyCard({ imovel, comparando = false, onToggleCompare, onInteresse, delay = 0, mostrarComparar = true }) {
   const [fav, setFav] = useState(false);
   const [pop, setPop] = useState(false);
   const caiu = imovel.preco_anterior && imovel.preco < imovel.preco_anterior;
@@ -53,6 +53,11 @@ export default function PropertyCard({ imovel, comparando = false, onToggleCompa
           <li title="Vagas"><Icon.Car width={17} height={17} />{imovel.vagas_garagem}</li>
           <li title="Área"><Icon.Area width={17} height={17} />{imovel.area_m2} m²</li>
         </ul>
+        {onInteresse && (
+          <button type="button" className="btn btn-accent pcard-interesse" onClick={() => onInteresse(imovel)}>
+            <Icon.Heart width={15} height={15} /> Tenho interesse
+          </button>
+        )}
         <div className="pcard-foot">
           {mostrarComparar && (
             <label className={`compare ${comparando ? "on" : ""}`}>

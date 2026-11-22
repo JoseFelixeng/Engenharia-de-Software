@@ -8,6 +8,7 @@ from backend.db import get_db
 from backend.models.post import Contato, FotoImovel, HistoricoPreco, Imovel
 from backend.models.user import Usuario
 from backend.schemas import (
+    ContatoCreate,
     ContatoRead,
     Finalidade,
     ImovelCreate,
@@ -99,10 +100,12 @@ def listar_contatos(
     resultado = []
     for c in contatos:
         interessado = db.query(Usuario).filter(Usuario.id == c.interessado_id).first()
+        imovel = db.get(Imovel, c.imovel_id)
         resultado.append(
             ContatoRead(
                 id=c.id,
                 imovel_id=c.imovel_id,
+                imovel_titulo=imovel.titulo if imovel else None,
                 interessado_id=c.interessado_id,
                 interessado_nome=interessado.nome if interessado else None,
                 interessado_email=interessado.email if interessado else None,
@@ -111,6 +114,58 @@ def listar_contatos(
             )
         )
     return resultado
+
+
+@router.post("/{imovel_id}/contatos", response_model=ContatoRead, status_code=status.HTTP_201_CREATED)
+def demonstrar_interesse(
+    imovel_id: int,
+    dados: ContatoCreate | None = None,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
+    """Registra o interesse de um usuário em um imóvel.
+
+    O interessado passa a aparecer na aba "Interessados" do painel do anunciante.
+    """
+    imovel = _buscar_imovel(db, imovel_id)
+    if imovel.situacao == "inativo":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Este imóvel não está disponível para interesse.",
+        )
+    if imovel.anunciante_id == usuario.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Você não pode demonstrar interesse no seu próprio imóvel.",
+        )
+    ja_existe = (
+        db.query(Contato)
+        .filter(Contato.imovel_id == imovel_id, Contato.interessado_id == usuario.id)
+        .first()
+    )
+    if ja_existe:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Você já demonstrou interesse neste imóvel.",
+        )
+    contato = Contato(
+        imovel_id=imovel_id,
+        interessado_id=usuario.id,
+        mensagem=(dados.mensagem if dados else None),
+    )
+    db.add(contato)
+    db.commit()
+    db.refresh(contato)
+    return ContatoRead(
+        id=contato.id,
+        imovel_id=contato.imovel_id,
+        imovel_titulo=imovel.titulo,
+        interessado_id=contato.interessado_id,
+        interessado_nome=usuario.nome,
+        interessado_email=usuario.email,
+        mensagem=contato.mensagem,
+        data=contato.data,
+    )
 
 
 @router.get("/{imovel_id}", response_model=ImovelRead)

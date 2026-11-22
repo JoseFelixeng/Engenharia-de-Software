@@ -96,11 +96,16 @@ class ContatoRead(BaseModel):
 
     id: int
     imovel_id: int
+    imovel_titulo: str | None = None
     interessado_id: int
     interessado_nome: str | None = None
     interessado_email: str | None = None
     mensagem: str | None = None
     data: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ContatoCreate(BaseModel):
+    mensagem: str | None = Field(default=None, max_length=500)
 
 
 class ImovelCreate(BaseModel):

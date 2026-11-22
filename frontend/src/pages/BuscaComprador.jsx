@@ -4,18 +4,27 @@ import Footer from "../components/Footer.jsx";
 import PropertyCard from "../components/PropertyCard.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
-import { listarImoveis } from "../services/mockApi.js";
+import { demonstrarInteresse, listarImoveis } from "../services/mockApi.js";
+import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
 const FILTROS_INICIAIS = { finalidade: "todos", cidade: "", tipo: "", quartos: "", preco_max: "" };
 
 export default function BuscaComprador() {
+  const { usuario } = useAuth();
   const [imoveis, setImoveis] = useState([]);
   const [carga, setCarga] = useState("idle"); // idle | loading | ok | fail
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS);
   const [comparacao, setComparacao] = useState([]);
   const [modalComparar, setModalComparar] = useState(false);
+  const [interesse, setInteresse] = useState(null); // imóvel alvo do modal de interesse
+  const [mensagem, setMensagem] = useState("");
+  const [statusInteresse, setStatusInteresse] = useState("idle"); // idle | loading | ok | fail
+  const [erroInteresse, setErroInteresse] = useState("");
+
+  const tokenAtual = () =>
+    localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || undefined;
 
   const carregar = async (filtrosAtuais = filtros) => {
     setCarga("loading");
@@ -53,6 +62,36 @@ export default function BuscaComprador() {
   };
 
   const limparComparar = () => setComparacao([]);
+
+  const abrirInteresse = (im) => {
+    setInteresse(im);
+    setMensagem("");
+    setStatusInteresse("idle");
+    setErroInteresse("");
+  };
+
+  const fecharInteresse = () => {
+    if (statusInteresse === "loading") return;
+    setInteresse(null);
+    setStatusInteresse("idle");
+    setErroInteresse("");
+  };
+
+  const confirmarInteresse = async (ev) => {
+    ev.preventDefault();
+    if (!interesse || statusInteresse === "loading") return;
+    setStatusInteresse("loading");
+    setErroInteresse("");
+    try {
+      await demonstrarInteresse(interesse.id, mensagem.trim() || null, tokenAtual());
+      setStatusInteresse("ok");
+    } catch (erro) {
+      setStatusInteresse("fail");
+      setErroInteresse(
+        erro?.detail || erro?.message || "Não foi possível registrar seu interesse. Tente novamente.",
+      );
+    }
+  };
 
   return (
     <>
@@ -132,6 +171,7 @@ export default function BuscaComprador() {
                 delay={idx * 60}
                 comparando={comparacao.includes(im.id)}
                 onToggleCompare={toggleComparar}
+                onInteresse={abrirInteresse}
               />
             ))}
           </div>
@@ -171,6 +211,65 @@ export default function BuscaComprador() {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {interesse && (
+        <div className="modal-overlay" onClick={fecharInteresse}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={fecharInteresse} aria-label="Fechar">
+              Fechar
+            </button>
+
+            {statusInteresse === "ok" ? (
+              <div className="interesse-ok">
+                <div className="interesse-ok-ico"><Icon.Check width={30} height={30} /></div>
+                <h2>Interesse registrado!</h2>
+                <p>
+                  O anunciante de <b>{interesse.titulo}</b> verá seu interesse no painel dele.
+                </p>
+                <button className="btn btn-primary btn-block" onClick={fecharInteresse}>Concluir</button>
+              </div>
+            ) : (
+              <>
+                <h2>Tenho interesse</h2>
+                <p className="interesse-sub">
+                  {interesse.titulo} · {interesse.bairro}, {interesse.cidade}
+                </p>
+                <form onSubmit={confirmarInteresse} noValidate>
+                  <div className="field">
+                    <label>Mensagem (opcional)</label>
+                    <textarea
+                      value={mensagem}
+                      onChange={(e) => setMensagem(e.target.value)}
+                      rows={3}
+                      maxLength={500}
+                      placeholder="Ex: Gostaria de agendar uma visita ao imóvel."
+                    />
+                    <span className="interesse-contador">{mensagem.length}/500</span>
+                  </div>
+                  {erroInteresse && <span className="err">{erroInteresse}</span>}
+                  <div className="interesse-acoes">
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      onClick={fecharInteresse}
+                      disabled={statusInteresse === "loading"}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={statusInteresse === "loading"}
+                    >
+                      {statusInteresse === "loading" ? "Enviando…" : "Confirmar interesse"}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}

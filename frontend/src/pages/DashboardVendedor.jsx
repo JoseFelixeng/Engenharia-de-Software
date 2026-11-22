@@ -269,25 +269,46 @@ export default function DashboardVendedor() {
               </div>
             )}
             {cargaContatos === "ok" && contatos.length > 0 && (
-              <div className="admin-lista">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>Interessado</th><th>E-mail</th><th>Imóvel</th><th>Mensagem</th><th>Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {contatos.map((c) => (
-                      <tr key={c.id}>
-                        <td>{c.interessado_nome || "Não informado"}</td>
-                        <td>{c.interessado_email || "-"}</td>
-                        <td>Imóvel #{c.imovel_id}</td>
-                        <td>{c.mensagem || "Sem mensagem"}</td>
-                        <td>{c.data ? new Date(c.data).toLocaleDateString("pt-BR") : "-"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="grid-cards interessados-grid">
+                {contatos.map((c) => {
+                  const nome = c.interessado_nome || "Interessado";
+                  const iniciais = nome
+                    .split(" ")
+                    .filter(Boolean)
+                    .map((p) => p[0])
+                    .slice(0, 2)
+                    .join("")
+                    .toUpperCase();
+                  return (
+                    <article key={c.id} className="icard">
+                      <div className="icard-head">
+                        <div className="icard-avatar">{iniciais}</div>
+                        <div className="icard-info">
+                          <h3>{nome}</h3>
+                          <p>{c.interessado_email || "Sem e-mail informado"}</p>
+                        </div>
+                      </div>
+                      <div className="icard-imovel">
+                        <Icon.Home width={16} height={16} />
+                        <span>{c.imovel_titulo || `Imóvel #${c.imovel_id}`}</span>
+                      </div>
+                      {c.mensagem && <p className="icard-msg">“{c.mensagem}”</p>}
+                      <div className="icard-foot">
+                        <span className="icard-data">
+                          {c.data ? new Date(c.data).toLocaleDateString("pt-BR") : ""}
+                        </span>
+                        {c.interessado_email && (
+                          <a
+                            href={`mailto:${c.interessado_email}`}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            <Icon.Mail width={14} height={14} /> Contatar
+                          </a>
+                        )}
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
             )}
             {cargaContatos === "ok" && contatos.length === 0 && (

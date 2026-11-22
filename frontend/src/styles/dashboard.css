@@ -78,5 +78,31 @@
 /* Empty state */
 .empty { text-align: center; padding: 64px 20px; border: 2px dashed var(--line); border-radius: var(--radius-l); color: var(--ink-soft); }
 
+/* Interessados (cards do vendedor) */
+.interessados-grid { margin-top: 8px; }
+.icard { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-s); display: flex; flex-direction: column; gap: 14px; transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease); }
+.icard:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
+.icard-head { display: flex; align-items: center; gap: 12px; }
+.icard-avatar { width: 44px; height: 44px; flex: none; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; font-weight: 700; font-size: 0.95rem; letter-spacing: 0.02em; }
+.icard-info { min-width: 0; }
+.icard-info h3 { font-size: 1.05rem; font-weight: 700; }
+.icard-info p { font-size: 0.82rem; color: var(--ink-mute); overflow-wrap: anywhere; }
+.icard-imovel { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9rem; color: var(--brand); background: var(--brand-soft); padding: 9px 12px; border-radius: 12px; }
+.icard-imovel svg { flex: none; }
+.icard-imovel span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icard-msg { font-size: 0.9rem; color: var(--ink-soft); line-height: 1.5; background: var(--bg); border-left: 3px solid var(--accent); padding: 10px 12px; border-radius: 8px; font-style: italic; }
+.icard-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: auto; }
+.icard-data { font-size: 0.8rem; color: var(--ink-mute); }
+
+/* Modal de interesse (comprador) */
+.interesse-sub { color: var(--ink-soft); font-size: 0.92rem; margin-bottom: 18px; }
+.interesse-contador { align-self: flex-end; font-size: 0.72rem; color: var(--ink-mute); }
+.interesse-acoes { display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px; }
+.interesse-ok { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 8px 0 4px; }
+.interesse-ok-ico { width: 64px; height: 64px; border-radius: 50%; background: var(--brand-soft); color: var(--brand); display: grid; place-items: center; box-shadow: 0 0 0 8px color-mix(in srgb, var(--brand-soft) 55%, transparent); }
+.interesse-ok h2 { margin: 6px 0 0; }
+.interesse-ok p { color: var(--ink-soft); }
+.interesse-ok .btn { margin-top: 8px; }
+
 /* Ícone Plus */
 .Icon { display: inline-block; }

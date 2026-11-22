@@ -52,6 +52,34 @@ def login(dados: LoginRequest, db: Session = Depends(get_db)):
     return TokenResponse(access_token=token, usuario=UsuarioRead.model_validate(usuario))
 
 
+@router.post("/token", response_model=TokenResponse)
+def emitir_token(
+    form: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
+    """Emite token JWT no padrão OAuth2 (form `username`/`password`).
+
+    Existe para o botão **Authorize** do Swagger (`/docs`), que envia
+    `application/x-www-form-urlencoded` em vez de JSON. O campo `username`
+    recebe o e-mail do usuário.
+    """
+    email = form.username.strip().lower()
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    if usuario is None or not verificar_senha(form.password, usuario.senha_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="E-mail ou senha incorretos.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    if usuario.situacao != "ativa":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Conta inativa. Procure o administrador.",
+        )
+    token = criar_token_acesso({"sub": str(usuario.id)})
+    return TokenResponse(access_token=token, usuario=UsuarioRead.model_validate(usuario))
+
+
 @router.post("/google", response_model=TokenResponse)
 def login_google(dados: GoogleLoginRequest, db: Session = Depends(get_db)):
     """Cadastro/Login via Conta Google.

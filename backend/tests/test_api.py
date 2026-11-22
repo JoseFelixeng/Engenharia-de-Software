@@ -85,6 +85,22 @@ class TestAuth:
         })
         assert res.status_code == 401
 
+    def test_token_oauth2_sucesso(self, client, usuario):
+        res = client.post("/auth/token", data={
+            "username": usuario["email"],
+            "password": "Minha Senha 123",
+        })
+        assert res.status_code == 200
+        assert res.json()["access_token"]
+        assert res.json()["token_type"] == "bearer"
+
+    def test_token_oauth2_senha_errada(self, client, usuario):
+        res = client.post("/auth/token", data={
+            "username": usuario["email"],
+            "password": "Senha Errada 123",
+        })
+        assert res.status_code == 401
+
 
 class TestUsuario:
     def test_me_sem_token(self, client):
@@ -218,3 +234,53 @@ class TestImoveis:
         assert res.status_code == 204
         res = client.get("/imoveis", headers=anunciante_headers)
         assert res.json() == []  # inativos não aparecem na listagem
+
+    def test_demonstrar_interesse_sucesso(self, client, auth_headers, usuario, imovel):
+        res = client.post(f"/imoveis/{imovel['id']}/contatos", headers=auth_headers, json={
+            "mensagem": "Gostaria de agendar uma visita.",
+        })
+        assert res.status_code == 201, res.text
+        body = res.json()
+        assert body["imovel_id"] == imovel["id"]
+        assert body["imovel_titulo"] == imovel["titulo"]
+        assert body["interessado_nome"] == usuario["nome"]
+        assert body["interessado_email"] == usuario["email"]
+        assert body["mensagem"] == "Gostaria de agendar uma visita."
+
+    def test_demonstrar_interesse_sem_mensagem(self, client, auth_headers, imovel):
+        res = client.post(f"/imoveis/{imovel['id']}/contatos", headers=auth_headers, json={})
+        assert res.status_code == 201, res.text
+        assert res.json()["mensagem"] is None
+
+    def test_demonstrar_interesse_duplicado(self, client, auth_headers, imovel):
+        primeiro = client.post(f"/imoveis/{imovel['id']}/contatos", headers=auth_headers, json={})
+        assert primeiro.status_code == 201
+        segundo = client.post(f"/imoveis/{imovel['id']}/contatos", headers=auth_headers, json={})
+        assert segundo.status_code == 409
+
+    def test_demonstrar_interesse_exige_login(self, client, imovel):
+        res = client.post(f"/imoveis/{imovel['id']}/contatos", json={})
+        assert res.status_code == 401
+
+    def test_demonstrar_interesse_no_proprio_imovel(self, client, anunciante_headers, imovel):
+        res = client.post(f"/imoveis/{imovel['id']}/contatos", headers=anunciante_headers, json={})
+        assert res.status_code == 400
+
+    def test_listar_contatos_do_anunciante(self, client, auth_headers, anunciante_headers, imovel):
+        criacao = client.post(
+            f"/imoveis/{imovel['id']}/contatos",
+            headers=auth_headers,
+            json={"mensagem": "Tenho interesse!"},
+        )
+        assert criacao.status_code == 201
+        res = client.get("/imoveis/contatos", headers=anunciante_headers)
+        assert res.status_code == 200, res.text
+        contatos = res.json()
+        assert len(contatos) == 1
+        assert contatos[0]["imovel_id"] == imovel["id"]
+        assert contatos[0]["imovel_titulo"] == imovel["titulo"]
+        assert contatos[0]["mensagem"] == "Tenho interesse!"
+
+    def test_listar_contatos_exige_anunciante(self, client, auth_headers):
+        res = client.get("/imoveis/contatos", headers=auth_headers)
+        assert res.status_code == 403

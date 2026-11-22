@@ -8,7 +8,7 @@ from backend.db import get_db
 from backend.models.user import Usuario
 from backend.security import decodificar_token
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token")
 
 
 def obter_usuario_atual(
