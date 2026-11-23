@@ -63,9 +63,12 @@ describe("Tela de Busca de Imóveis (BuscaComprador.jsx)", () => {
       </MemoryRouter>
     );
 
+    // Clica em "Mostrar Todos" para carregar os imóveis (busca inicia vazia)
+    fireEvent.click(screen.getByText("Mostrar Todos"));
+
     expect(await screen.findByText("Apartamento Beira-Mar")).toBeInTheDocument();
     expect(screen.getByText("Casa em Condomínio")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(/2 .* encontrados/i);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Todos os imóveis");
   });
 
   it("deve filtrar imóveis por cidade/bairro e finalidade", async () => {
@@ -77,13 +80,15 @@ describe("Tela de Busca de Imóveis (BuscaComprador.jsx)", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("Apartamento Beira-Mar");
+    // Volta para aba Buscar para usar os filtros
+    fireEvent.click(screen.getAllByText("Buscar")[0]);
 
     fireEvent.change(screen.getByPlaceholderText("Cidade ou bairro"), {
       target: { value: "Ponta Negra" },
     });
+    fireEvent.click(screen.getAllByRole("button", { name: /buscar/i })[1]);
 
-    expect(screen.getByText("Apartamento Beira-Mar")).toBeInTheDocument();
+    expect(await screen.findByText("Apartamento Beira-Mar")).toBeInTheDocument();
     expect(screen.queryByText("Casa em Condomínio")).not.toBeInTheDocument();
     expect(screen.getByText("1 imóvel encontrado")).toBeInTheDocument();
   });
@@ -97,11 +102,13 @@ describe("Tela de Busca de Imóveis (BuscaComprador.jsx)", () => {
       </MemoryRouter>
     );
 
-    await screen.findByText("Apartamento Beira-Mar");
+    // Volta para aba Buscar para usar os filtros
+    fireEvent.click(screen.getAllByText("Buscar")[0]);
 
     fireEvent.change(screen.getByPlaceholderText("Cidade ou bairro"), {
       target: { value: "Cidade Inexistente" },
     });
+    fireEvent.click(screen.getAllByRole("button", { name: /buscar/i })[1]);
 
     await waitFor(() => {
       expect(screen.getByText("Nenhum imóvel encontrado")).toBeInTheDocument();

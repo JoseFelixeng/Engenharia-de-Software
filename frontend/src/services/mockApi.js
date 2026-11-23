@@ -64,6 +64,14 @@ export async function listarContatos(token) {
   return _request("GET", "/imoveis/contatos", null, token);
 }
 
+export async function listarMeusInteresses(token) {
+  return _request("GET", "/usuario/me/interesses", null, token);
+}
+
+export async function estatisticasInteresse(token) {
+  return _request("GET", "/imoveis/estatisticas-interesse", null, token);
+}
+
 export async function demonstrarInteresse(imovelId, mensagem, token) {
   return _request("POST", `/imoveis/${imovelId}/contatos`, { mensagem: mensagem || null }, token);
 }
@@ -108,4 +116,16 @@ export async function alternarSituacaoUsuario(userId, situacao, token) {
     { situacao },
     token
   );
+}
+
+export async function editarUsuario(userId, dados, token) {
+  return _request("PATCH", `/usuario/${userId}`, dados, token);
+}
+
+export async function excluirUsuario(userId, token) {
+  return _request("DELETE", `/usuario/${userId}`, null, token);
+}
+
+export async function removerImovel(imovelId, token) {
+  return _request("DELETE", `/imoveis/${imovelId}`, null, token);
 }

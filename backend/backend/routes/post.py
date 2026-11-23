@@ -14,6 +14,7 @@ from backend.models.user import Usuario
 from backend.schemas import (
     ContatoCreate,
     ContatoRead,
+    EstatisticaInteresse,
     Finalidade,
     ImovelCreate,
     ImovelRead,
@@ -128,6 +129,35 @@ def listar_contatos(
             )
         )
     return resultado
+
+
+@router.get("/estatisticas-interesse", response_model=list[EstatisticaInteresse])
+def estatisticas_interesse(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
+    """Retorna o total de interessados (contatos) por imóvel do anunciante logado (gráfico)."""
+    if usuario.tipo_usuario not in PERFIS_ANUNCIANTE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas anunciantes podem ver estatísticas de interesse.",
+        )
+    estatisticas = (
+        db.query(Imovel.id, Imovel.titulo, db.func.count(Contato.id).label("total_contatos"))
+        .outerjoin(Contato, Contato.imovel_id == Imovel.id)
+        .filter(Imovel.anunciante_id == usuario.id)
+        .group_by(Imovel.id, Imovel.titulo)
+        .order_by(db.func.count(Contato.id).desc())
+        .all()
+    )
+    return [
+        EstatisticaInteresse(
+            imovel_id=e.id,
+            imovel_titulo=e.titulo,
+            total_contatos=e.total_contatos,
+        )
+        for e in estatisticas
+    ]
 
 
 @router.post("/{imovel_id}/contatos", response_model=ContatoRead, status_code=status.HTTP_201_CREATED)

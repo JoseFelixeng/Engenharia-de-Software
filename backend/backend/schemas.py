@@ -167,3 +167,51 @@ class ImovelRead(BaseModel):
     data_cadastro: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     fotos: list[FotoRead] = []
     historico: list[HistoricoPrecoRead] = []
+
+
+class InteresseItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    imovel_id: int
+    imovel_titulo: str
+    imovel_tipo: str
+    imovel_finalidade: Finalidade
+    imovel_preco: float
+    imovel_cidade: str
+    imovel_estado: str
+    imovel_bairro: str
+    imovel_situacao: SituacaoImovel
+    interessado_id: int
+    mensagem: str | None
+    data: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class EstatisticaInteresse(BaseModel):
+    imovel_id: int
+    imovel_titulo: str
+    total_contatos: int
+
+
+class UsuarioUpdate(BaseModel):
+    nome: str | None = Field(default=None, min_length=3, max_length=100)
+    email: str | None = Field(default=None, max_length=150)
+    telefone: str | None = Field(default=None, max_length=20)
+    tipo_usuario: TipoUsuario | None = None
+    situacao: Literal["ativa", "inativa"] | None = None
+    senha: str | None = Field(default=None, min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def email_valido(cls, v: str | None) -> str | None:
+        if v is not None:
+            return _validar_email(v)
+        return v
+
+    @field_validator("nome")
+    @classmethod
+    def nome_completo(cls, v: str | None) -> str | None:
+        if v is not None:
+            v = " ".join(v.split())
+            if len(v.split(" ")) < 2:
+                raise ValueError("Informe nome e sobrenome.")
+        return v

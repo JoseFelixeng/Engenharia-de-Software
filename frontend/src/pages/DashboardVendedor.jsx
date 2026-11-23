@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
-import { criarImovel, atualizarImovel, listarContatos, listarImoveis, enviarFoto, removerFoto } from "../services/mockApi.js";
+import { criarImovel, atualizarImovel, listarContatos, listarImoveis, enviarFoto, removerFoto, estatisticasInteresse } from "../services/mockApi.js";
 import { lerToken, lerUsuario } from "../services/tokenStorage.js";
 import { midiaUrl } from "../utils/midia.js";
 import { useAuth } from "../services/auth.jsx";
@@ -39,6 +39,8 @@ export default function DashboardVendedor() {
   const [contatos, setContatos] = useState([]);
   const [cargaImoveis, setCargaImoveis] = useState("idle");
   const [cargaContatos, setCargaContatos] = useState("idle");
+  const [cargaEstatisticas, setCargaEstatisticas] = useState("idle");
+  const [estatisticas, setEstatisticas] = useState([]);
   const [novo, setNovo] = useState(NOVO_VAZIO);
   const [erros, setErros] = useState({});
   const [status, setStatus] = useState("idle"); // idle | loading | fail
@@ -74,10 +76,28 @@ export default function DashboardVendedor() {
     }
   }
 
+  async function carregarEstatisticas() {
+    setCargaEstatisticas("loading");
+    try {
+      const lista = await estatisticasInteresse(token());
+      setEstatisticas(lista || []);
+      setCargaEstatisticas("ok");
+    } catch {
+      setEstatisticas([]);
+      setCargaEstatisticas("fail");
+    }
+  }
+
   useEffect(() => {
     carregarMeusImoveis();
     carregarContatos();
   }, []);
+
+  useEffect(() => {
+    if (aba === "grafico") {
+      carregarEstatisticas();
+    }
+  }, [aba]);
 
   const validar = () => {
     const e = {};
@@ -222,6 +242,12 @@ export default function DashboardVendedor() {
             >
               <Icon.User width={16} height={16} /> Interessados
             </button>
+            <button
+              className={`btn btn-ghost ${aba === "grafico" ? "on" : ""}`}
+              onClick={() => setAba("grafico")}
+            >
+              <Icon.Trend width={16} height={16} /> Gráfico de Interesses
+            </button>
           </div>
         </div>
 
@@ -356,6 +382,64 @@ export default function DashboardVendedor() {
             {cargaContatos === "ok" && contatos.length === 0 && (
               <div className="container empty">
                 <p>Nenhum interessado entrou em contato ainda.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ===== ABA: GRÁFICO DE INTERESSES ===== */}
+        {aba === "grafico" && (
+          <div className="container">
+            <div className="dashboard-header" style={{ marginTop: 0 }}>
+              <h2>Gráfico de Interesses</h2>
+              <p>Total de interessados por imóvel que você está vendendo.</p>
+            </div>
+
+            {cargaEstatisticas === "fail" && (
+              <div className="container empty">
+                <p>Não foi possível carregar as estatísticas.</p>
+                <button className="btn btn-ghost" onClick={carregarEstatisticas}>Tentar novamente</button>
+              </div>
+            )}
+
+            {cargaEstatisticas === "loading" && estatisticas.length === 0 && (
+              <div className="container empty"><p>Carregando estatísticas…</p></div>
+            )}
+
+            {cargaEstatisticas !== "fail" && estatisticas.length === 0 && cargaEstatisticas !== "loading" && (
+              <div className="container empty">
+                <Icon.Trend width={48} height={48} />
+                <h3>Nenhum interesse registrado ainda.</h3>
+                <p>Quando interessados entrarem em contato com seus imóveis, eles aparecerão aqui.</p>
+              </div>
+            )}
+
+            {estatisticas.length > 0 && (
+              <div className="grafico-container">
+                <div className="grafico-barras">
+                  {estatisticas.map((e) => (
+                    <div key={e.imovel_id} className="grafico-barra">
+                      <div className="grafico-barra-altura" style={{ height: `${Math.min((e.total_contatos / 10) * 100, 100)}%` }}></div>
+                      <span className="grafico-valor">{e.total_contatos}</span>
+                      <span className="grafico-label">{e.imovel_titulo}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="grafico-tabela">
+                  <table>
+                    <thead>
+                      <tr><th>Imóvel</th><th>Interessados</th></tr>
+                    </thead>
+                    <tbody>
+                      {estatisticas.map((e) => (
+                        <tr key={e.imovel_id}>
+                          <td>{e.imovel_titulo}</td>
+                          <td>{e.total_contatos}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
