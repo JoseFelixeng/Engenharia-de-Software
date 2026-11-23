@@ -50,6 +50,8 @@ A interface é responsiva, com tema profissional (navy + azul + dourado), anima�
   - `GET /imoveis/{id}` — detalhe com fotos e histórico de preços.
   - `GET /imoveis/contatos` — interessados que contataram os imóveis do anunciante.
   - `POST /imoveis` — criar anúncio (apenas anunciantes: administrador, proprietário, corretor).
+  - `POST /imoveis/{id}/fotos` — envio de imagem do imóvel (JPG/PNG/WEBP/GIF, até 5 MB); sem imagem o card usa a ilustração padrão.
+  - `DELETE /imoveis/{id}/fotos/{foto_id}` — remove uma foto do imóvel.
   - `PATCH /imoveis/{id}` — atualizar anúncio (dono ou administrador). Mudança de preço registra **histórico** e preenche `preco_anterior`.
   - `DELETE /imoveis/{id}` — remoção lógica (soft delete, situação `inativo`).
 - **Documentação**
@@ -138,7 +140,7 @@ A interface é responsiva, com tema profissional (navy + azul + dourado), anima�
 ## Pré-requisitos
 
 - **Docker** e **Docker Compose** (recomendado), **ou**
-- **Node.js 20+** e **npm** (frontend)
+- **Node.js 22.19+** e **npm** (frontend; `jsdom`/`undici` exigem Node ≥ 22.19)
 - **Python 3.12+** (backend)
 - **PostgreSQL 16** (opcional; os testes podem ser feito usando o SQLite)
 
@@ -274,6 +276,9 @@ Frontend em `http://localhost:5173`.
 | `POST` | `/imoveis` | Anunciante |
 | `PATCH` | `/imoveis/{id}` | Dono / Administrador |
 | `DELETE` | `/imoveis/{id}` | Dono / Administrador |
+| `POST` | `/imoveis/{id}/fotos` | Dono / Administrador |
+| `DELETE` | `/imoveis/{id}/fotos/{foto_id}` | Dono / Administrador |
+| `GET` | `/media/{arquivo}` | Público (fotos enviadas) |
 | `GET` | `/docs`, `/redoc`, `/openapi.json` | Basic Auth (`admin`/`admin`) |
 | `GET` | `/` | Público (healthcheck) |
 
@@ -317,7 +322,7 @@ O workflow `.github/workflows/ci.yml` roda automaticamente a cada **push** e **p
 | Job | O que executa |
 |-----|---------------|
 | **Backend (pytest)** | Prepara Python 3.12, instala dependências e roda `pytest` (SQLite auto-contido) |
-| **Frontend (lint + test + build)** | Prepara Node 20, `npm ci`, `npm run lint`, `npm run test` e `npm run build` |
+| **Frontend (lint + test + build)** | Prepara Node 22, `npm ci`, `npm run lint`, `npm run test` e `npm run build` |
 | **Docker (build das imagens)** | Valida o `docker-compose.yaml` e constrói as imagens de backend e frontend |
 
 [![CI](https://github.com/JoseFelixeng/Engenharia-de-Software/actions/workflows/ci.yml/badge.svg)](https://github.com/JoseFelixeng/Engenharia-de-Software/actions/workflows/ci.yml)

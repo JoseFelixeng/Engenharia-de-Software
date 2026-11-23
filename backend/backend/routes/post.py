@@ -1,9 +1,13 @@
 """Rotas de imóveis: listagem com busca/filtros, detalhe e gerenciamento pelo anunciante."""
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+import os
+import uuid
+
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session, selectinload
 
 from backend.auth import obter_usuario_atual
+from backend.config import MEDIA_DIR
 from backend.db import get_db
 from backend.models.post import Contato, FotoImovel, HistoricoPreco, Imovel
 from backend.models.user import Usuario
@@ -19,6 +23,16 @@ from backend.schemas import (
 router = APIRouter(prefix="/imoveis", tags=["imóveis"])
 
 PERFIS_ANUNCIANTE = ("administrador", "proprietario", "corretor")
+
+# Imagens aceitas e tamanho máximo (5 MB).
+EXTENSOES_FOTO = {".jpg", ".jpeg", ".png", ".webp", ".gif"}
+TIPO_PARA_EXTENSAO = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+TAMANHO_MAX_FOTO = 5 * 1024 * 1024
 
 _COM_RELACIONAMENTOS = (
     selectinload(Imovel.fotos),
@@ -247,3 +261,70 @@ def remover(
     _exigir_dono_ou_admin(imovel, usuario)
     imovel.situacao = "inativo"
     db.commit()
+
+
+@router.post("/{imovel_id}/fotos", response_model=ImovelRead, status_code=status.HTTP_201_CREATED)
+def enviar_foto(
+    imovel_id: int,
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
+    """Envia uma foto para o imóvel (apenas dono ou administrador)."""
+    imovel = _buscar_imovel(db, imovel_id)
+    _exigir_dono_ou_admin(imovel, usuario)
+
+    conteudo = file.file.read()
+    if len(conteudo) > TAMANHO_MAX_FOTO:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="A imagem excede o tamanho máximo de 5 MB.",
+        )
+    if not conteudo:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Arquivo vazio.")
+
+    extensao = os.path.splitext(file.filename or "")[1].lower()
+    if extensao not in EXTENSOES_FOTO:
+        extensao = TIPO_PARA_EXTENSAO.get((file.content_type or "").lower(), "")
+    if extensao not in EXTENSOES_FOTO:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Formato de imagem não suportado. Use JPG, PNG, WEBP ou GIF.",
+        )
+
+    nome_arquivo = f"{uuid.uuid4().hex}{extensao}"
+    caminho = os.path.join(MEDIA_DIR, nome_arquivo)
+    with open(caminho, "wb") as destino:
+        destino.write(conteudo)
+
+    foto = FotoImovel(
+        imovel_id=imovel_id,
+        url=f"/media/{nome_arquivo}",
+        ordem=len(imovel.fotos),
+    )
+    db.add(foto)
+    db.commit()
+    return _buscar_imovel(db, imovel_id)
+
+
+@router.delete("/{imovel_id}/fotos/{foto_id}", response_model=ImovelRead)
+def remover_foto(
+    imovel_id: int,
+    foto_id: int,
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(obter_usuario_atual),
+):
+    """Remove uma foto do imóvel (apenas dono ou administrador)."""
+    imovel = _buscar_imovel(db, imovel_id)
+    _exigir_dono_ou_admin(imovel, usuario)
+    foto = db.get(FotoImovel, foto_id)
+    if foto is None or foto.imovel_id != imovel_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Foto não encontrada.")
+    nome_arquivo = os.path.basename(foto.url)
+    try:
+        os.remove(os.path.join(MEDIA_DIR, nome_arquivo))
+    except OSError:
+        pass
+    db.delete(foto)
+    db.commit()
+    return _buscar_imovel(db, imovel_id)

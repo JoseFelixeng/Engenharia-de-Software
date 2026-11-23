@@ -27,8 +27,10 @@
 .pcard:hover { transform: translateY(-8px); box-shadow: var(--shadow); }
 .pcard-media { position: relative; aspect-ratio: 16 / 11; overflow: hidden; }
 .pcard-media .art { width: 100%; height: 100%; transition: transform 0.9s var(--ease); }
+.pcard-media .pcard-img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.9s var(--ease); }
 .pcard-art { position: absolute; inset: 0; }
 .pcard:hover .art { transform: scale(1.07); }
+.pcard:hover .pcard-img { transform: scale(1.07); }
 .pcard-media::after { content: ""; position: absolute; inset: 45% 0 0; background: linear-gradient(transparent, rgba(10, 25, 20, 0.6)); pointer-events: none; }
 .pcard-badges { position: absolute; top: 12px; left: 12px; display: flex; gap: 6px; z-index: 2; }
 .badge { padding: 5px 11px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; backdrop-filter: blur(6px); }

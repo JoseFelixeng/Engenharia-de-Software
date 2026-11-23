@@ -43,4 +43,6 @@ node_modules
 morada_postgres.sql
 Plataforma_de_Imoveis_Ideia_e_Diferenciais.pdf
 AGENTS.md
-criterios.txt 
+criterios.txt
+
+*.pyc

@@ -21,6 +21,8 @@ TEST_DATABASE_URL = f"sqlite:///{_db_path}"
 # Postgres vivo. Precisa ser definido antes de importar o app, pois o
 # backend.config lê DATABASE_URL no momento da importação.
 os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
+# Fotos enviadas nos testes vão para um diretório temporário.
+os.environ.setdefault("MEDIA_DIR", tempfile.mkdtemp(prefix="morada_media_"))
 
 from backend.app import app  # noqa: E402
 from backend.db import get_db  # noqa: E402

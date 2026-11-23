@@ -284,3 +284,51 @@ class TestImoveis:
     def test_listar_contatos_exige_anunciante(self, client, auth_headers):
         res = client.get("/imoveis/contatos", headers=auth_headers)
         assert res.status_code == 403
+
+    def test_enviar_foto_sucesso(self, client, anunciante_headers, imovel):
+        arquivos = {"file": ("casa.png", b"\x89PNG\r\n\x1a\n" + b"0" * 64, "image/png")}
+        res = client.post(
+            f"/imoveis/{imovel['id']}/fotos", headers=anunciante_headers, files=arquivos
+        )
+        assert res.status_code == 201, res.text
+        fotos = res.json()["fotos"]
+        # O imóvel do fixture já possui fotos; a nova é adicionada ao final.
+        assert len(fotos) == len(imovel["fotos"]) + 1
+        nova = fotos[-1]
+        assert nova["url"].startswith("/media/")
+        assert nova["ordem"] == len(imovel["fotos"])
+        # A imagem salva deve ser servida publicamente em /media.
+        img = client.get(nova["url"])
+        assert img.status_code == 200
+        assert img.content.startswith(b"\x89PNG")
+
+    def test_enviar_foto_exige_dono(self, client, auth_headers, imovel):
+        arquivos = {"file": ("casa.png", b"\x89PNG\r\n\x1a\n", "image/png")}
+        res = client.post(
+            f"/imoveis/{imovel['id']}/fotos", headers=auth_headers, files=arquivos
+        )
+        assert res.status_code == 403
+
+    def test_enviar_foto_formato_invalido(self, client, anunciante_headers, imovel):
+        arquivos = {"file": ("doc.txt", b"conteudo", "text/plain")}
+        res = client.post(
+            f"/imoveis/{imovel['id']}/fotos", headers=anunciante_headers, files=arquivos
+        )
+        assert res.status_code == 400
+
+    def test_remover_foto(self, client, anunciante_headers, imovel):
+        envio = client.post(
+            f"/imoveis/{imovel['id']}/fotos",
+            headers=anunciante_headers,
+            files={"file": ("c.png", b"\x89PNG\r\n\x1a\n", "image/png")},
+        )
+        assert envio.status_code == 201, envio.text
+        fotos_antes = envio.json()["fotos"]
+        foto_enviada = fotos_antes[-1]
+        res = client.delete(
+            f"/imoveis/{imovel['id']}/fotos/{foto_enviada['id']}", headers=anunciante_headers
+        )
+        assert res.status_code == 200
+        ids = [f["id"] for f in res.json()["fotos"]]
+        assert foto_enviada["id"] not in ids
+        assert len(res.json()["fotos"]) == len(fotos_antes) - 1

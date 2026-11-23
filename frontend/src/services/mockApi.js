@@ -68,6 +68,26 @@ export async function demonstrarInteresse(imovelId, mensagem, token) {
   return _request("POST", `/imoveis/${imovelId}/contatos`, { mensagem: mensagem || null }, token);
 }
 
+// ---------------- Fotos do imóvel ----------------
+export async function enviarFoto(imovelId, arquivo, token) {
+  const form = new FormData();
+  form.append("file", arquivo);
+  const res = await fetch(`${BASE}/imoveis/${imovelId}/fotos`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: form,
+  });
+  if (!res.ok) {
+    const erro = await res.json().catch(() => ({ detail: "Erro ao enviar a imagem." }));
+    throw erro;
+  }
+  return res.json();
+}
+
+export async function removerFoto(imovelId, fotoId, token) {
+  return _request("DELETE", `/imoveis/${imovelId}/fotos/${fotoId}`, null, token);
+}
+
 export async function loginGoogle(credential) {
   return _request("POST", "/auth/google", { credential });
 }

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Icon } from "./Icons.jsx";
 import PropertyArt from "./PropertyArt.jsx";
+import { midiaUrl } from "../utils/midia.js";
 import { brl } from "../data/imoveis.js";
 
 export default function PropertyCard({ imovel, comparando = false, onToggleCompare, onInteresse, delay = 0, mostrarComparar = true }) {
@@ -8,6 +9,7 @@ export default function PropertyCard({ imovel, comparando = false, onToggleCompa
   const [pop, setPop] = useState(false);
   const caiu = imovel.preco_anterior && imovel.preco < imovel.preco_anterior;
   const queda = caiu ? Math.round((1 - imovel.preco / imovel.preco_anterior) * 100) : 0;
+  const fotoUrl = imovel.fotos?.[0]?.url;
 
   const toggleFav = () => {
     setFav((f) => !f);
@@ -22,7 +24,11 @@ export default function PropertyCard({ imovel, comparando = false, onToggleCompa
   return (
     <article className="pcard" style={{ animationDelay: `${delay}ms` }}>
       <div className="pcard-media">
-        <PropertyArt tipo={imovel.tipo} paleta={imovel.paleta} />
+        {fotoUrl ? (
+          <img className="pcard-img" src={midiaUrl(fotoUrl)} alt={imovel.titulo} loading="lazy" />
+        ) : (
+          <PropertyArt tipo={imovel.tipo} paleta={imovel.paleta} />
+        )}
         <div className="pcard-badges">
           <span className={`badge ${imovel.finalidade === "venda" ? "badge-dark" : "badge-light"}`}>
             {imovel.finalidade === "venda" ? "Venda" : "Aluguel"}

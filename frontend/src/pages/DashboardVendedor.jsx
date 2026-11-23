@@ -3,8 +3,9 @@ import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
-import { criarImovel, atualizarImovel, listarContatos, listarImoveis } from "../services/mockApi.js";
+import { criarImovel, atualizarImovel, listarContatos, listarImoveis, enviarFoto, removerFoto } from "../services/mockApi.js";
 import { lerToken, lerUsuario } from "../services/tokenStorage.js";
+import { midiaUrl } from "../utils/midia.js";
 import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
@@ -43,6 +44,8 @@ export default function DashboardVendedor() {
   const [status, setStatus] = useState("idle"); // idle | loading | fail
   const [abrirModal, setAbrirModal] = useState(false);
   const [editando, setEditando] = useState(null);
+  const [foto, setFoto] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState("");
 
   const token = () => lerToken() || undefined;
   const meuId = () => usuario?.id ?? lerUsuario()?.id;
@@ -91,6 +94,34 @@ export default function DashboardVendedor() {
     if (erros[k]) setErros({ ...erros, [k]: undefined });
   };
 
+  const selecionarFoto = (ev) => {
+    const arquivo = ev.target.files?.[0] || null;
+    setFoto(arquivo);
+    setFotoPreview((anterior) => {
+      if (anterior) URL.revokeObjectURL(anterior);
+      return arquivo ? URL.createObjectURL(arquivo) : "";
+    });
+  };
+
+  const limparFoto = () => {
+    setFoto(null);
+    setFotoPreview((anterior) => {
+      if (anterior) URL.revokeObjectURL(anterior);
+      return "";
+    });
+  };
+
+  const removerFotoAtual = async (fotoId) => {
+    if (!editando) return;
+    try {
+      const atualizado = await removerFoto(editando.id, fotoId, token());
+      setEditando(atualizado);
+      setImoveis((prev) => prev.map((i) => (i.id === atualizado.id ? atualizado : i)));
+    } catch {
+      /* silencioso: mantém o estado atual */
+    }
+  };
+
   const payload = () => ({
     titulo: novo.titulo,
     tipo: novo.tipo,
@@ -113,11 +144,13 @@ export default function DashboardVendedor() {
     if (Object.keys(e).length) return;
     setStatus("loading");
     try {
-      const criado = await criarImovel(payload(), token());
-      setImoveis((prev) => [criado, ...prev]);
+      let salvo = await criarImovel(payload(), token());
+      if (foto) salvo = await enviarFoto(salvo.id, foto, token());
+      setImoveis((prev) => [salvo, ...prev]);
       setAbrirModal(false);
       setNovo(NOVO_VAZIO);
       setEditando(null);
+      limparFoto();
       setStatus("idle");
     } catch {
       setStatus("fail");
@@ -129,6 +162,7 @@ export default function DashboardVendedor() {
     setEditando(null);
     setErros({});
     setStatus("idle");
+    limparFoto();
     setAbrirModal(true);
   };
 
@@ -137,6 +171,7 @@ export default function DashboardVendedor() {
     setNovo(paraForm(imovel));
     setErros({});
     setStatus("idle");
+    limparFoto();
     setAbrirModal(true);
   };
 
@@ -148,15 +183,17 @@ export default function DashboardVendedor() {
     if (Object.keys(e).length) return;
     setStatus("loading");
     try {
-      const atualizado = await atualizarImovel(
+      let atualizado = await atualizarImovel(
         editando.id,
         { ...payload(), situacao: novo.situacao || "disponivel" },
         token(),
       );
+      if (foto) atualizado = await enviarFoto(editando.id, foto, token());
       setImoveis((prev) => prev.map((i) => (i.id === atualizado.id ? atualizado : i)));
       setAbrirModal(false);
       setEditando(null);
       setNovo(NOVO_VAZIO);
+      limparFoto();
       setStatus("idle");
     } catch {
       setStatus("fail");
@@ -213,7 +250,11 @@ export default function DashboardVendedor() {
                 {imoveis.map((im) => (
                   <article key={im.id} className="pcard">
                     <div className="pcard-media">
-                      <div className="pcard-art" style={{ background: im.paleta?.[1] || "#17715a" }} />
+                      {im.fotos?.[0]?.url ? (
+                        <img className="pcard-img" src={midiaUrl(im.fotos[0].url)} alt={im.titulo} loading="lazy" />
+                      ) : (
+                        <div className="pcard-art" style={{ background: im.paleta?.[1] || "#17715a" }} />
+                      )}
                       <span className={`badge ${im.finalidade === "venda" ? "badge-dark" : "badge-light"}`}>
                         {im.finalidade === "venda" ? "Venda" : "Aluguel"}
                       </span>
@@ -405,6 +446,35 @@ export default function DashboardVendedor() {
                 <label>Descrição</label>
                 <textarea value={novo.descricao} onChange={handleChange("descricao")} rows={3} />
               </div>
+
+              {editando && editando.fotos?.length > 0 && (
+                <div className="field">
+                  <label>Fotos atuais</label>
+                  <div className="fotos-atuais">
+                    {editando.fotos.map((f) => (
+                      <div key={f.id} className="foto-item">
+                        <img src={midiaUrl(f.url)} alt="Foto do imóvel" loading="lazy" />
+                        <button type="button" className="foto-remover" onClick={() => removerFotoAtual(f.id)}>
+                          Remover
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="field">
+                <label>Foto do imóvel (opcional)</label>
+                <input type="file" accept="image/*" onChange={selecionarFoto} />
+                {fotoPreview ? (
+                  <img className="foto-preview" src={fotoPreview} alt="Prévia da foto" />
+                ) : (
+                  <span className="hint">
+                    Sem foto, o imóvel será exibido com a imagem padrão.
+                  </span>
+                )}
+              </div>
+
               <button className="btn btn-primary btn-block" disabled={status === "loading"}>
                 {status === "loading" ? "Salvando..." : editando ? "Salvar alterações" : "Criar anúncio"}
               </button>

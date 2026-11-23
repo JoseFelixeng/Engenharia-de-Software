@@ -7,8 +7,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from backend.admin_seed import garantir_admin
+from backend.config import MEDIA_DIR
 from backend.db import criar_tabelas
 from backend.routes import auth, post, user
 
@@ -26,6 +28,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Morada API", version="0.1.0", lifespan=lifespan)
+
+# Fotos de imóveis enviadas ficam em MEDIA_DIR e são servidas em /media.
+os.makedirs(MEDIA_DIR, exist_ok=True)
+app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
 
 app.add_middleware(
     CORSMiddleware,

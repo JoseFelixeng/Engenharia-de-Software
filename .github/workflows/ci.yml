@@ -55,7 +55,8 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom 31 / undici 8 exigem Node >= 22.19.0 (zlib.createZstdDecompress).
+          node-version: 22
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
