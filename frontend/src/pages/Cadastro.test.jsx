@@ -19,6 +19,7 @@ describe("Tela de Cadastro (Cadastro.jsx)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -104,7 +105,7 @@ describe("Tela de Cadastro (Cadastro.jsx)", () => {
         tipo_usuario: "proprietario",
         senha: "SenhaForte@2026",
       });
-      expect(localStorage.getItem("morada_token")).toBe("token-novo-usuario");
+      expect(sessionStorage.getItem("morada_token")).toBe("token-novo-usuario");
       expect(mockNavigate).toHaveBeenCalledWith("/vendedor");
     });
   });

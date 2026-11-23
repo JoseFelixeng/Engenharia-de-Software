@@ -16,7 +16,6 @@ const destinoPorTipo = (tipo) => {
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", senha: "" });
-  const [lembrar, setLembrar] = useState(true);
   const [erros, setErros] = useState({});
   const [status, setStatus] = useState("idle"); // idle | loading
   const [info, setInfo] = useState("");
@@ -36,7 +35,7 @@ export default function Login() {
   };
 
   const finalizarLogin = (resposta) => {
-    gravarToken(resposta.access_token, lembrar);
+    gravarToken(resposta.access_token);
     setUser(resposta.usuario);
     navigate(destinoPorTipo(resposta.usuario?.tipo_usuario));
   };
@@ -85,11 +84,6 @@ export default function Login() {
         {erros._api && <span className="err" role="alert">{erros._api}</span>}
 
         <div className="row-between">
-          <label className="check">
-            <input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />
-            <span className="check-box"><Icon.Check width={13} height={13} strokeWidth={3} /></span>
-            Lembrar de mim
-          </label>
           <button type="button" className="link" onClick={() => setInfo("A recuperação de senha está em manutenção. Fale com o administrador.")}>
             Esqueci a senha
           </button>

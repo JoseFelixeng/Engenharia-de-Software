@@ -10,4 +10,6 @@ passlib[bcrypt] # serve para criar o hash do password
 python-multipart # conseguir fazer upload de imagem
 psycopg2-binary  # driver que permite se conectar ao banco de dados postgres
 alembic          # ferramenta de database migracion
-rich             # serve para criar tabelas no terminal 
+rich             # serve para criar tabelas no terminal
+pytest           # framework de testes (backend/tests)
+httpx            # cliente HTTP exigido pelo TestClient do FastAPI/Starlette 

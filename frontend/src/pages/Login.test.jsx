@@ -19,6 +19,7 @@ describe("Tela de Login (Login.jsx)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
   });
 
   afterEach(() => {
@@ -76,7 +77,7 @@ describe("Tela de Login (Login.jsx)", () => {
 
     await waitFor(() => {
       expect(mockApi.login).toHaveBeenCalledWith("maria@morada.com", "senha1234");
-      expect(localStorage.getItem("morada_token")).toBe("token-teste-123");
+      expect(sessionStorage.getItem("morada_token")).toBe("token-teste-123");
       expect(mockNavigate).toHaveBeenCalledWith("/vendedor");
     });
   });

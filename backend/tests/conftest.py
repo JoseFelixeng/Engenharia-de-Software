@@ -14,12 +14,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
-from backend.app import app
-from backend.db import get_db
-
 _db_fd, _db_path = tempfile.mkstemp(suffix=".db")
 os.close(_db_fd)
 TEST_DATABASE_URL = f"sqlite:///{_db_path}"
+# Garante que o app (backend.db/engine) também use SQLite, sem depender de um
+# Postgres vivo. Precisa ser definido antes de importar o app, pois o
+# backend.config lê DATABASE_URL no momento da importação.
+os.environ.setdefault("DATABASE_URL", TEST_DATABASE_URL)
+
+from backend.app import app  # noqa: E402
+from backend.db import get_db  # noqa: E402
+
 engine = create_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

@@ -283,6 +283,7 @@ Frontend em `http://localhost:5173`.
 
 - **Senhas**: hash **bcrypt** com custo 12.
 - **Tokens**: **JWT HS256**, expiração de 7 dias, enviados no header `Authorization: Bearer <token>`.
+- **Sessão por aba**: no frontend o token é guardado em `sessionStorage` (isolado por aba), permitindo **vários usuários logados ao mesmo tempo em abas diferentes**; ao **fechar a aba** o token é descartado e é necessário **logar novamente** (não é persistido em `localStorage`).
 - **Autorização por papel**: `administrador`, `proprietario`, `corretor`, `interessado` (via dependência `exigir_tipo`).
 - **Documentação protegida**: `/docs`, `/redoc` e `/openapi.json` exigem **Basic Auth** (`admin`/`admin`, configurável).
 - **Boas práticas**: mensagens de erro genéricas no login (não revelam se o e-mail existe), bloqueio de contas inativas, validação de entrada no servidor (Pydantic).
@@ -298,8 +299,7 @@ cd backend
 pytest
 ```
 
-> O `conftest.py` sobe um banco **SQLite temporário** e recria as tabelas a cada teste. Para forçar SQLite:
-> `DATABASE_URL="sqlite:///./test.db" pytest`
+> O `conftest.py` define um banco **SQLite temporário** automaticamente e recria as tabelas a cada teste, portanto `pytest` funciona sem um Postgres vivo. Para apontar outro banco, basta exportar `DATABASE_URL` (ex.: `DATABASE_URL="sqlite:///./test.db" pytest`).
 
 ### Frontend
 
@@ -309,6 +309,18 @@ npm run lint     # Oxlint
 npm run test     # Vitest + Testing Library
 npm run build    # Build de produção (dist/)
 ```
+
+### Integração Contínua (GitHub Actions)
+
+O workflow `.github/workflows/ci.yml` roda automaticamente a cada **push** e **pull request** para `main`, com três jobs paralelos:
+
+| Job | O que executa |
+|-----|---------------|
+| **Backend (pytest)** | Prepara Python 3.12, instala dependências e roda `pytest` (SQLite auto-contido) |
+| **Frontend (lint + test + build)** | Prepara Node 20, `npm ci`, `npm run lint`, `npm run test` e `npm run build` |
+| **Docker (build das imagens)** | Valida o `docker-compose.yaml` e constrói as imagens de backend e frontend |
+
+[![CI](https://github.com/JoseFelixeng/Engenharia-de-Software/actions/workflows/ci.yml/badge.svg)](https://github.com/JoseFelixeng/Engenharia-de-Software/actions/workflows/ci.yml)
 
 ---
 

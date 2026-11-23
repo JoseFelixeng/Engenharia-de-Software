@@ -4,6 +4,7 @@ import Footer from "../components/Footer.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
 import { criarImovel, atualizarImovel, listarContatos, listarImoveis } from "../services/mockApi.js";
+import { lerToken, lerUsuario } from "../services/tokenStorage.js";
 import { useAuth } from "../services/auth.jsx";
 import "../styles/components.css";
 import "../styles/dashboard.css";
@@ -43,8 +44,8 @@ export default function DashboardVendedor() {
   const [abrirModal, setAbrirModal] = useState(false);
   const [editando, setEditando] = useState(null);
 
-  const token = () => localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || undefined;
-  const meuId = () => usuario?.id ?? JSON.parse(localStorage.getItem("morada_usuario") || "{}").id;
+  const token = () => lerToken() || undefined;
+  const meuId = () => usuario?.id ?? lerUsuario()?.id;
 
   async function carregarMeusImoveis() {
     setCargaImoveis("loading");

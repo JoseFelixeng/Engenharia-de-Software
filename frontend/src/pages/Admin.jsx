@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import { listarTodosUsuario, alternarSituacaoUsuario, resetarSenhaUsuario } from "../services/mockApi.js";
+import { lerToken } from "../services/tokenStorage.js";
 
 const TIPOS = ["todos", "administrador", "proprietario", "corretor", "interessado"];
 const SITUACOES = ["todos", "ativa", "inativa"];
@@ -15,7 +16,7 @@ export default function Admin() {
   const [erro, setErro] = useState("");
   const [acaoId, setAcaoId] = useState(null);
 
-  const token = () => localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token");
+  const token = () => lerToken();
 
   async function carregar() {
     setCarregando(true);

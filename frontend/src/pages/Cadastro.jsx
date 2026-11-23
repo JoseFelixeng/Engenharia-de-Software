@@ -73,7 +73,7 @@ export default function Cadastro() {
         senha: form.senha,
       });
       const usuario = resposta.usuario || resposta;
-      gravarToken(resposta.access_token, true);
+      gravarToken(resposta.access_token);
       setUser(usuario);
       navigate(tipo === "anunciante" ? "/vendedor" : "/comprador");
     } catch (err) {

@@ -5,6 +5,7 @@ import PropertyCard from "../components/PropertyCard.jsx";
 import { Icon } from "../components/Icons.jsx";
 import { brl } from "../data/imoveis.js";
 import { demonstrarInteresse, listarImoveis } from "../services/mockApi.js";
+import { lerToken } from "../services/tokenStorage.js";
 import "../styles/components.css";
 import "../styles/dashboard.css";
 
@@ -21,8 +22,7 @@ export default function BuscaComprador() {
   const [statusInteresse, setStatusInteresse] = useState("idle"); // idle | loading | ok | fail
   const [erroInteresse, setErroInteresse] = useState("");
 
-  const tokenAtual = () =>
-    localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || undefined;
+  const tokenAtual = () => lerToken() || undefined;
 
   const carregar = async (filtrosAtuais = filtros) => {
     setCarga("loading");

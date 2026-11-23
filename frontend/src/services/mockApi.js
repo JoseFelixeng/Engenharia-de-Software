@@ -3,10 +3,12 @@
  * de ambiente VITE_API_BASE antes de rodar o build/dev (ex.: VITE_API_BASE=http://localhost:8000).
  */
 
+import { lerToken } from "./tokenStorage.js";
+
 const BASE = import.meta.env.VITE_API_BASE || "http://localhost:8000";
 
 function tokenAtual() {
-  return localStorage.getItem("morada_token") || sessionStorage.getItem("morada_token") || "";
+  return lerToken() || "";
 }
 
 async function _request(method, path, body, token) {

@@ -1,28 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { me } from "./mockApi.js";
+import {
+  lerToken,
+  gravarToken,
+  gravarUsuario,
+  limparSessao,
+} from "./tokenStorage.js";
+
+export { lerToken, gravarToken, limparSessao };
 
 const AuthContext = createContext(null);
-
-const TOKEN_KEY = "morada_token";
-const USER_KEY = "morada_usuario";
-
-export function lerToken() {
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || "";
-}
-
-export function gravarToken(token, lembrar = true) {
-  localStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  if (!token) return;
-  if (lembrar) localStorage.setItem(TOKEN_KEY, token);
-  else sessionStorage.setItem(TOKEN_KEY, token);
-}
-
-export function limparSessao() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-}
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(null);
@@ -39,7 +26,10 @@ export function AuthProvider({ children }) {
     }
     me(token)
       .then((u) => {
-        if (ativo) setUsuario(u);
+        if (ativo) {
+          setUsuario(u);
+          gravarUsuario(u);
+        }
       })
       .catch(() => {
         limparSessao();
@@ -54,7 +44,7 @@ export function AuthProvider({ children }) {
 
   const setUser = useCallback((u) => {
     setUsuario(u || null);
-    if (u) localStorage.setItem(USER_KEY, JSON.stringify(u));
+    gravarUsuario(u || null);
   }, []);
 
   const logout = useCallback(() => {
@@ -74,5 +64,10 @@ export function AuthProvider({ children }) {
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (ctx) return ctx;
-  return { usuario: null, carregando: false, setUser: () => {}, logout: () => {} };
+  return {
+    usuario: null,
+    carregando: false,
+    setUser: () => {},
+    logout: () => {},
+  };
 }
